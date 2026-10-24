@@ -2,7 +2,7 @@
 
 ## 1. 目标
 
-交付可安装的 iOS / Android 手机 App。HTML 原型只用于表达交互，不作为生产客户端或后端。
+长期目标是交付可安装的 iOS / Android 手机 App。当前 MVP 开发与验收先聚焦 iOS，Android 暂缓，直至 owner 另行决定恢复（ADR-008）。HTML 原型只用于表达交互，不作为生产客户端或后端。
 
 ## 2. 推荐技术栈
 
@@ -15,7 +15,7 @@
 | 云端 | Supabase | PostgreSQL、Auth、Data API、RLS、数据库函数；Edge Functions 仅用于需要服务端密钥或外部 API 的功能。 |
 | 数据访问 | `@supabase/supabase-js` | 客户端仅持有 publishable key；所有暴露表启用 RLS。数据库事务逻辑通过 SQL function/RPC。 |
 | 状态/表单 | React hooks + 小型共享 service 层 | 先避免过早引入大型状态框架；若跨屏状态复杂再做 ADR 评估。 |
-| 构建发布 | EAS Build / TestFlight / Google Play 内测 | 开发、预发布、生产环境隔离；环境变量按环境配置。 |
+| 构建发布 | EAS Build / TestFlight（当前 iOS 范围） | 开发、预发布、生产环境隔离；环境变量按环境配置。Android / Google Play 构建发布暂缓（ADR-008）。 |
 | 源码协作 | GitHub | 私有仓库、Issues、Projects、CI、PR 和版本化文档；按单人开发使用，不依赖 CODEOWNERS 或多人审批。 |
 
 官方资料：Expo Router 的多平台路由、Expo Camera 条码扫描、Expo SQLite 和 Expo + Supabase 接入见 [Expo Router](https://docs.expo.dev/router/introduction/)、[Expo Camera](https://docs.expo.dev/versions/latest/sdk/camera/)、[Expo SQLite](https://docs.expo.dev/versions/latest/sdk/sqlite/)、[Expo 使用 Supabase](https://docs.expo.dev/guides/using-supabase/)；Supabase Expo quickstart 说明客户端初始化与 RLS 接入，见 [Supabase Expo React Native](https://supabase.com/docs/guides/getting-started/quickstarts/expo-react-native)、[Supabase RLS](https://supabase.com/docs/guides/database/postgres/row-level-security)。

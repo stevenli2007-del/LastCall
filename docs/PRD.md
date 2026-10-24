@@ -1,7 +1,9 @@
 # 临期宝 LastCall 产品需求文档（PRD）
 
-**状态：** Draft v1.0  
-**目标平台：** iOS / Android 原生安装 App  
+**状态：** Draft v1.0
+
+**目标平台：** iOS / Android 原生安装 App；当前 MVP 开发和验收先聚焦 iOS，Android 暂缓（ADR-008）
+
 **核心用户：** 便利店店员；门店管理员负责门店设置与成员管理
 
 ## 1. 产品目标

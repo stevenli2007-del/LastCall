@@ -2,6 +2,13 @@
 
 本文记录当前已确认的关键决策。新增决定按日期倒序追加，不删除旧记录；被替代时标记 superseded 并链接新决定。
 
+## ADR-008 · MVP 开发先聚焦 iOS
+
+- **状态：** Accepted（owner 2026-10-23）
+- **背景：** 项目进入 T0.3 工程初始化阶段；owner 决定当前开发只推进 iOS App。
+- **决定：** T0.3 起的当前开发与验收范围限定为 iOS。Android 工程构建、设备验证和发布工作暂缓，直到 owner 另行决定恢复。
+- **影响：** Expo 工程明确配置仅支持 iOS，Roadmap 的当前开发验收按 iOS 执行。该决定调整实施顺序，不替代 ADR-001 中长期产品仍面向 iOS / Android 的目标。
+
 ## ADR-001 · 正式产品为 iOS / Android App
 
 - **状态：** Accepted
@@ -32,7 +39,7 @@
 
 ## ADR-005 · MVP 使用 Expo 与 Supabase
 
-- **状态：** Proposed（实现前复核）
+- **状态：** Accepted（owner 2026-10-23）
 - **背景：** 小团队需共享 iOS/Android 客户端、认证、Postgres 与权限控制。
 - **决定：** 推荐 Expo React Native + TypeScript、Supabase Auth/Postgres/RLS，SQLite 用于本地缓存基础。
 - **影响：** 需要真实设备试点；MVP 不承诺离线写入。若确定必须完全离线，重新评估同步方案。
