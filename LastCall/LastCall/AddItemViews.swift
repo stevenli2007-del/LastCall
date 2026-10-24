@@ -22,6 +22,7 @@ struct AddItemSheet: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
 
+    @State private var selectedCell = 0
     @State private var barcode = ""
     @State private var name = ""
     @State private var productionDate = Date()
@@ -39,7 +40,17 @@ struct AddItemSheet: View {
     private var trimmedBarcode: String { barcode.trimmingCharacters(in: .whitespacesAndNewlines) }
     private var trimmedName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
 
-    private var slot: (cell: Int, depth: Int)? { nextSlot(in: container, preferredCell: preferredCell) }
+    /// 位置由用户选的格子决定；该格满时 nextSlot 顺延到下一个有空位的格子
+    private var slot: (cell: Int, depth: Int)? {
+        nextSlot(in: container, preferredCell: selectedCell)
+    }
+
+    /// 格子选择器的标签：A · 2/5；已满的标「满」
+    private func cellPickerLabel(_ cell: Int) -> String {
+        let used = container.items.filter { $0.cellIndex == cell }.count
+        let name = excelColumnName(cell)
+        return used >= container.depthCapacity ? "\(name) · 满" : "\(name) · \(used)/\(container.depthCapacity)"
+    }
 
     private var expiryDate: Date { Calendar.current.dateByAddingDays(shelfLifeDays, to: productionDate) }
 
@@ -57,6 +68,7 @@ struct AddItemSheet: View {
     var body: some View {
         NavigationStack {
             Form {
+                cellSection
                 barcodeSection
                 infoSection
                 previewSection
@@ -81,6 +93,23 @@ struct AddItemSheet: View {
     }
 
     // MARK: Subviews
+
+    /// 选目标格子（PRD §5.3：选择格子后按纵深顺序录入，纵深不能自选 —— 不变量 I2 要求格内连续无空洞）
+    private var cellSection: some View {
+        Section("目标格子") {
+            Picker("格子", selection: $selectedCell) {
+                ForEach(0..<container.cellCount, id: \.self) { cell in
+                    Text(cellPickerLabel(cell)).tag(cell)
+                }
+            }
+
+            if let slot, slot.cell != selectedCell {
+                Text("\(excelColumnName(selectedCell)) 已满，将自动顺延到有空位的 \(excelColumnName(slot.cell)) 格")
+                    .font(.caption)
+                    .foregroundStyle(Color.statusNearFG)
+            }
+        }
+    }
 
     private var barcodeSection: some View {
         Section("条码") {
@@ -161,14 +190,16 @@ struct AddItemSheet: View {
 
     // MARK: Actions
 
-    /// 保质天数默认值 = 最近录入那一件的值；没有历史数据则用 10
+    /// 首次打开：选中外部传入的默认格子（高亮格或第一个未满格）；
+    /// 保质天数默认值 = 最近录入那一件的值，没有历史数据则用 10
     private func loadDefaultShelfLife() {
         guard !didLoadDefaultShelfLife else { return }
         didLoadDefaultShelfLife = true
+        selectedCell = preferredCell
         shelfLifeDays = recentItems.first?.shelfLifeDays ?? 10
     }
 
-    /// 保存后不清空保质天数与生产日期 —— 同批次连续录入时少改两次
+    /// 保存后不清空格子、保质天数与生产日期 —— 同一批次连续录入时少改三次
     private func save() {
         do {
             let item = try addItem(barcode: trimmedBarcode,
@@ -176,7 +207,7 @@ struct AddItemSheet: View {
                                    productionDate: productionDate,
                                    shelfLifeDays: shelfLifeDays,
                                    to: container,
-                                   preferredCell: preferredCell,
+                                   preferredCell: selectedCell,
                                    context: context)
             savedLocation = item.locationCode
             errorMessage = nil
