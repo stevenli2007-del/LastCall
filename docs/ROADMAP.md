@@ -228,7 +228,7 @@ iPhone：**设置 → 隐私与安全性 → 开发者模式** → 打开 → �
 | 阶段 | 计划 | 实际 | 完成时间 | 备注 |
 |---|---|---|---|---|
 | H0 签名链路 | 0.5h | ~0.8h | 2026-10-24 12:38 | ✅ 通过。真机 Zhongyuan 的 iPhone 16 Pro Max（iOS 26.6.2）安装成功，App 可运行不闪退。证据：`security find-identity` = 1 valid identity（Apple Development: stevenli2007@berkeley.edu）；`devicectl device info apps` 列出 `LastCall / berkeley.stevenli.LastCall / 1.0`。耗时主要在等 USB 设备到位与开发者模式开启，非签名故障 |
-| H1 数据层+首页 | 1.5h | | | |
+| H1 数据层+首页 | 1.5h | ~0.4h | 2026-10-24 12:52 | ✅ 代码完成。Models.swift（4 个 @Model + 全部算法 + seed）、LastCallApp.swift（ModelContainer + seed）、ContentView.swift（TabView + 首页四卡 + 今日提醒列表）；样板 Item.swift 已删除，现 3 个 Swift 文件（252/59/312 行）。模拟器与真机均 BUILD SUCCEEDED，真机已装机启动。`excelColumnName` 自检 7/7 通过。⏳ 两条待目视验收：首页数字是否为「在库 6 / 临期 2 / 过期 0 / 容器 3」、杀进程重开数据仍在 |
 | H2 容器+格子 | 2h | | | |
 | H3 上架 | 2h | | | |
 | H4 下架 | 1.5h | | | |

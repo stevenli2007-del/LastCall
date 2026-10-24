@@ -1,0 +1,312 @@
+//
+//  Models.swift
+//  LastCall
+//
+//  数据模型 + 全部业务算法。
+//  本文件不含任何 SwiftUI View（见 CODINGRULES §1 文件职责边界）。
+//  字段与算法依据 docs/DATABASE.md，不自行发明。
+//
+
+import Foundation
+import SwiftData
+
+// MARK: - Models
+
+enum ContainerType: String, Codable, CaseIterable, Identifiable {
+    case fridge
+    case shelf
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .fridge: return "冰柜"
+        case .shelf: return "货架"
+        }
+    }
+
+    var symbolName: String {
+        switch self {
+        case .fridge: return "thermometer.snowflake"
+        case .shelf: return "shippingbox"
+        }
+    }
+}
+
+@Model
+final class Store {
+    var id: UUID
+    var name: String
+    var timezoneIdentifier: String
+    var nearExpiryDays: Int
+    var createdAt: Date
+    @Relationship(deleteRule: .cascade, inverse: \Container.store) var containers: [Container] = []
+
+    init(name: String = "未命名门店",
+         timezoneIdentifier: String = TimeZone.current.identifier,
+         nearExpiryDays: Int = 2) {
+        self.id = UUID()
+        self.name = name
+        self.timezoneIdentifier = timezoneIdentifier
+        self.nearExpiryDays = nearExpiryDays
+        self.createdAt = .now
+        self.containers = []
+    }
+}
+
+@Model
+final class Container {
+    var id: UUID
+    var name: String
+    var type: ContainerType
+    var rows: Int
+    var columns: Int
+    var depthCapacity: Int
+    var createdAt: Date
+    var store: Store?
+    @Relationship(deleteRule: .cascade, inverse: \Item.container) var items: [Item] = []
+
+    init(name: String,
+         type: ContainerType = .fridge,
+         rows: Int = 3,
+         columns: Int = 2,
+         depthCapacity: Int = 5) {
+        self.id = UUID()
+        self.name = name
+        self.type = type
+        self.rows = max(1, rows)
+        self.columns = max(1, columns)
+        self.depthCapacity = max(1, depthCapacity)
+        self.createdAt = .now
+        self.store = nil
+        self.items = []
+    }
+
+    // 派生属性（不存储）
+
+    var cellCount: Int { rows * columns }
+    var totalCapacity: Int { rows * columns * depthCapacity }
+    var usedCount: Int { items.count }
+    var fillRatio: Double { totalCapacity == 0 ? 0 : Double(usedCount) / Double(totalCapacity) }
+}
+
+@Model
+final class Item {
+    var id: UUID
+    /// ⚠️ 条码必须是 String，禁止 Int —— 前导零会丢（CR-4.1）
+    var barcode: String
+    var name: String
+    var productionDate: Date
+    var shelfLifeDays: Int
+    /// 格子索引，0-based，按行优先映射到 A/B/C…
+    var cellIndex: Int
+    /// 纵深序号，0-based，UI 显示时 +1
+    var depthIndex: Int
+    var createdAt: Date
+    var container: Container?
+
+    init(barcode: String,
+         name: String = "",
+         productionDate: Date,
+         shelfLifeDays: Int = 10,
+         cellIndex: Int = 0,
+         depthIndex: Int = 0) {
+        self.id = UUID()
+        self.barcode = barcode
+        self.name = name
+        self.productionDate = Calendar.current.startOfDay(for: productionDate)
+        self.shelfLifeDays = shelfLifeDays
+        self.cellIndex = cellIndex
+        self.depthIndex = depthIndex
+        self.createdAt = .now
+        self.container = nil
+    }
+
+    // 派生属性（不存储）
+
+    /// 生产日期当天算第 0 天：2026-01-01 + 10 天 = 2026-01-11
+    var expiryDate: Date {
+        Calendar.current.dateByAddingDays(shelfLifeDays, to: productionDate)
+    }
+
+    var barcodeSuffix4: String {
+        barcode.count > 4 ? String(barcode.suffix(4)) : barcode
+    }
+
+    /// 如 A1、B3、AA2
+    var locationCode: String {
+        excelColumnName(cellIndex) + "\(depthIndex + 1)"
+    }
+
+    var displayName: String {
+        name.isEmpty ? "未命名商品" : name
+    }
+}
+
+@Model
+final class RemovalRecord {
+    var id: UUID
+    var barcode: String
+    var itemName: String
+    var containerName: String
+    var locationCode: String
+    var productionDate: Date
+    var expiryDate: Date
+    var removedAt: Date
+
+    init(barcode: String,
+         itemName: String,
+         containerName: String,
+         locationCode: String,
+         productionDate: Date,
+         expiryDate: Date,
+         removedAt: Date = .now) {
+        self.id = UUID()
+        self.barcode = barcode
+        self.itemName = itemName
+        self.containerName = containerName
+        self.locationCode = locationCode
+        self.productionDate = productionDate
+        self.expiryDate = expiryDate
+        self.removedAt = removedAt
+    }
+}
+
+// MARK: - Algorithms
+
+enum ItemStatus: String, Codable, CaseIterable {
+    case normal
+    case near
+    case expired
+
+    var displayName: String {
+        switch self {
+        case .normal: return "正常"
+        case .near: return "临期"
+        case .expired: return "过期"
+        }
+    }
+}
+
+enum RemoveError: LocalizedError {
+    case barcodeMismatch
+    case missingContainer
+
+    var errorDescription: String? {
+        switch self {
+        case .barcodeMismatch: return "条码不匹配，库存未做任何修改"
+        case .missingContainer: return "该商品不属于任何容器，无法下架"
+        }
+    }
+}
+
+extension Calendar {
+    /// 按日历日加减，自动处理夏令时。禁止用 timeInterval 直接加 86400（CR-4.2）
+    func dateByAddingDays(_ days: Int, to date: Date) -> Date {
+        self.date(byAdding: .day, value: days, to: startOfDay(for: date))!
+    }
+}
+
+/// 格子索引 → Excel 风格列名。0 → "A"，25 → "Z"，26 → "AA"，27 → "AB"
+/// 原型 index.html 的 `String.fromCharCode(65 + ci)` 在 ci ≥ 26 会输出 `[`、`]`，必须用它替代
+func excelColumnName(_ index: Int) -> String {
+    precondition(index >= 0, "cellIndex 不能为负")
+    var n = index
+    var result = ""
+    while true {
+        let r = n % 26
+        result = String(UnicodeScalar(65 + r)!) + result
+        n = n / 26 - 1
+        if n < 0 { break }
+    }
+    return result
+}
+
+/// 状态判定。比较前必须把今天与过期日都归一化到当天 00:00（CR-4.3），否则午后会差一天
+func status(of item: Item, today: Date, nearDays: Int) -> ItemStatus {
+    let cal = Calendar.current
+    let t = cal.startOfDay(for: today)
+    let e = cal.startOfDay(for: item.expiryDate)
+    let days = cal.dateComponents([.day], from: t, to: e).day ?? 0
+
+    if days <= 0 { return .expired }      // today >= expiry
+    if days <= nearDays { return .near }
+    return .normal
+}
+
+/// 该格内下一个可用纵深序号；格子已满返回 nil
+func nextDepth(in container: Container, cell: Int) -> Int? {
+    let used = container.items.filter { $0.cellIndex == cell }.count
+    return used < container.depthCapacity ? used : nil
+}
+
+/// 下一个空位：优先 preferredCell，该格满则顺延找下一格；全部满返回 nil
+func nextSlot(in container: Container, preferredCell: Int) -> (cell: Int, depth: Int)? {
+    if let d = nextDepth(in: container, cell: preferredCell) { return (preferredCell, d) }
+    for c in 0..<container.cellCount where c != preferredCell {
+        if let d = nextDepth(in: container, cell: c) { return (c, d) }
+    }
+    return nil
+}
+
+/// 下架：验证 → 留档 → 删除 → 同格后续前移。四步在同一事务内（CR-4.5 / 不变量 I2）
+func remove(item: Item, scannedBarcode: String, context: ModelContext) throws {
+    guard scannedBarcode == item.barcode else { throw RemoveError.barcodeMismatch }
+    guard let container = item.container else { throw RemoveError.missingContainer }
+
+    let snapshot = RemovalRecord(barcode: item.barcode,
+                                 itemName: item.displayName,
+                                 containerName: container.name,
+                                 locationCode: item.locationCode,
+                                 productionDate: item.productionDate,
+                                 expiryDate: item.expiryDate)
+    context.insert(snapshot)
+    context.delete(item)
+
+    let siblings = container.items
+        .filter { $0.cellIndex == item.cellIndex && $0.depthIndex > item.depthIndex }
+        .sorted { $0.depthIndex < $1.depthIndex }
+    for s in siblings { s.depthIndex -= 1 }
+
+    try context.save()
+}
+
+// MARK: - Seed
+
+enum SeedData {
+    static func makeDefaultStore() -> Store {
+        Store(name: "青禾便利 · 城南店",
+              timezoneIdentifier: TimeZone.current.identifier,
+              nearExpiryDays: 2)
+    }
+
+    /// 演示容器。日期全部相对「今天」动态生成，避免隔天失效（DATABASE §5）
+    static func makeDemoContainers(today: Date = .now) -> [Container] {
+        let cal = Calendar.current
+        func produced(daysAgo: Int) -> Date { cal.dateByAddingDays(-daysAgo, to: today) }
+
+        let fridge = Container(name: "牛奶冰柜", type: .fridge, rows: 3, columns: 2, depthCapacity: 5)
+        fridge.items.append(contentsOf: [
+            Item(barcode: "6901028075831", name: "鲜牛奶",
+                 productionDate: produced(daysAgo: 7), shelfLifeDays: 10, cellIndex: 0, depthIndex: 0),
+            Item(barcode: "6901028075831", name: "鲜牛奶",
+                 productionDate: produced(daysAgo: 5), shelfLifeDays: 10, cellIndex: 1, depthIndex: 0),
+            Item(barcode: "6901028075862", name: "酸奶",
+                 productionDate: produced(daysAgo: 11), shelfLifeDays: 14, cellIndex: 1, depthIndex: 1),
+            Item(barcode: "6901028075831", name: "鲜牛奶",
+                 productionDate: produced(daysAgo: 9), shelfLifeDays: 10, cellIndex: 2, depthIndex: 0)
+        ])
+
+        let shelf = Container(name: "面包货架", type: .shelf, rows: 2, columns: 3, depthCapacity: 4)
+        shelf.items.append(contentsOf: [
+            Item(barcode: "6901028080001", name: "全麦吐司",
+                 productionDate: produced(daysAgo: 2), shelfLifeDays: 7, cellIndex: 0, depthIndex: 0),
+            Item(barcode: "6901028080002", name: "牛角包",
+                 productionDate: produced(daysAgo: 3), shelfLifeDays: 5, cellIndex: 1, depthIndex: 0)
+        ])
+
+        let drinks = Container(name: "饮料冷柜", type: .fridge, rows: 2, columns: 2, depthCapacity: 6)
+
+        return [fridge, shelf, drinks]
+    }
+}
