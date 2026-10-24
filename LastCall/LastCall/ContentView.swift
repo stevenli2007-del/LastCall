@@ -22,6 +22,10 @@ struct ContentView: View {
                 .tabItem {
                     Label("容器", systemImage: "square.grid.2x2.fill")
                 }
+            RemoveListView()
+                .tabItem {
+                    Label("下架", systemImage: "minus.circle.fill")
+                }
             SettingsView()
                 .tabItem {
                     Label("设置", systemImage: "gearshape.fill")
