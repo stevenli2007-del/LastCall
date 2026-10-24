@@ -281,6 +281,10 @@ enum SeedData {
     }
 
     /// 演示容器。日期全部相对「今天」动态生成，避免隔天失效（DATABASE §5）
+    ///
+    /// 偏差说明：酸奶的生产偏移按 DATABASE §5 原为 -11，调整为 -15（保质期仍 14 天），
+    /// 使其过期日落在昨天 —— 演示当天首页能同时呈现「正常 / 临期 / 过期」三态。
+    /// Steven 于 2026-10-24 确认。
     static func makeDemoContainers(today: Date = .now) -> [Container] {
         let cal = Calendar.current
         func produced(daysAgo: Int) -> Date { cal.dateByAddingDays(-daysAgo, to: today) }
@@ -292,7 +296,7 @@ enum SeedData {
             Item(barcode: "6901028075831", name: "鲜牛奶",
                  productionDate: produced(daysAgo: 5), shelfLifeDays: 10, cellIndex: 1, depthIndex: 0),
             Item(barcode: "6901028075862", name: "酸奶",
-                 productionDate: produced(daysAgo: 11), shelfLifeDays: 14, cellIndex: 1, depthIndex: 1),
+                 productionDate: produced(daysAgo: 15), shelfLifeDays: 14, cellIndex: 1, depthIndex: 1),
             Item(barcode: "6901028075831", name: "鲜牛奶",
                  productionDate: produced(daysAgo: 9), shelfLifeDays: 10, cellIndex: 2, depthIndex: 0)
         ])
