@@ -107,7 +107,7 @@
 
 ---
 
-### ADR-006：H7 文件数 6 → 9（⏳ 已提议，待 Steven 批准）
+### ADR-006：H7 文件数 6 → 9（✅ Steven 2026-10-24 16:44 批准）
 
 **决策：** H7 优化阶段新增 / 拆分 3 个文件：`ContainerShelfView.swift`、`LoginViews.swift`、`SellViews.swift`。
 

@@ -95,22 +95,17 @@ struct ContainerDetailView: View {
     }
 
     var body: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                if let container {
-                    VStack(alignment: .leading, spacing: 14) {
-                        summary(container)
-                        cellGrid(container)
-                    }
-                    .padding(16)
-                    .onAppear {
-                        if let focusCell { proxy.scrollTo(focusCell, anchor: .center) }
-                    }
-                } else {
-                    ContentUnavailableView("容器不存在",
-                                           systemImage: "questionmark.square",
-                                           description: Text("它可能已被删除"))
+        ScrollView {
+            if let container {
+                VStack(alignment: .leading, spacing: 14) {
+                    summary(container)
+                    cellGrid(container)
                 }
+                .padding(16)
+            } else {
+                ContentUnavailableView("容器不存在",
+                                       systemImage: "questionmark.square",
+                                       description: Text("它可能已被删除"))
             }
         }
         .background(Color.paper.ignoresSafeArea())
@@ -155,96 +150,16 @@ struct ContainerDetailView: View {
         .background(.background, in: .rect(cornerRadius: 14))
     }
 
-    /// 每行格子数严格等于 columns，行数由总数自然决定（验收标准 1）
+    /// 柜体正视图：整柜渲染，格位按 rows × columns 真实排布（验收标准 1 / H7 第 1 项）
     private func cellGrid(_ c: Container) -> some View {
-        let columns = Array(repeating: GridItem(.flexible(), spacing: 10), count: max(1, c.columns))
-        return LazyVGrid(columns: columns, spacing: 10) {
-            ForEach(0..<c.cellCount, id: \.self) { index in
-                CellBox(container: c,
-                        cellIndex: index,
-                        today: today,
-                        nearDays: nearDays,
-                        focused: index == focusCell)
-                    .id(index)
-                    .onTapGesture { selectedCell = index }
-            }
-        }
+        ShelfView(container: c,
+                  today: today,
+                  nearDays: nearDays,
+                  focusCell: focusCell) { selectedCell = $0 }
     }
 }
 
 // MARK: - Subviews
-
-/// 单个格子：标签 + 纵深小色块（沿用原型 `.cell` / `.unit` 视觉）
-struct CellBox: View {
-    let container: Container
-    let cellIndex: Int
-    let today: Date
-    let nearDays: Int
-    var focused: Bool = false
-
-    private var cellItems: [Item] { items(in: container, cell: cellIndex) }
-
-    private var label: String { excelColumnName(cellIndex) }
-    private var emptySlots: Int { max(0, container.depthCapacity - cellItems.count) }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(label).font(.system(size: 11, weight: .bold)).foregroundStyle(Color(hex: 0x66736B))
-                Spacer(minLength: 0)
-                Text("\(cellItems.count)/\(container.depthCapacity)")
-                    .font(.system(size: 9))
-                    .foregroundStyle(Color(hex: 0xA1AAA4))
-            }
-
-            if cellItems.isEmpty {
-                Text("空格位").font(.system(size: 10)).foregroundStyle(Color(hex: 0xA1AAA4))
-            } else {
-                unitList
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(11)
-        .frame(minHeight: 120, alignment: .topLeading)
-        .background(Color(hex: 0xFBFCFA), in: .rect(cornerRadius: 13))
-        .overlay {
-            RoundedRectangle(cornerRadius: 13)
-                .stroke(focused ? Color.brandGreen : Color(hex: 0xE3E9E3), lineWidth: focused ? 2 : 1)
-        }
-        .shadow(color: focused ? Color.brandGreen.opacity(0.25) : .clear, radius: 6, y: 2)
-    }
-
-    /// 已占用的显示位置码色块，未占用的显示虚线空位（PRD §5.3「未使用的容量保持空位显示」）
-    private var unitList: some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 30), spacing: 5)], spacing: 5) {
-            ForEach(cellItems) { item in
-                let colors = unitColors(item)
-                Text(item.locationCode)
-                    .font(.system(size: 9, weight: .semibold))
-                    .foregroundStyle(colors.foreground)
-                    .frame(minWidth: 30)
-                    .padding(.vertical, 5)
-                    .background(colors.background, in: .rect(cornerRadius: 7))
-            }
-            ForEach(0..<emptySlots, id: \.self) { _ in
-                RoundedRectangle(cornerRadius: 7)
-                    .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
-                    .foregroundStyle(Color(hex: 0xDDE4DC))
-                    .frame(minWidth: 30, minHeight: 22)
-            }
-        }
-    }
-
-    /// 配色沿用 DATABASE §4.3 的状态表（CR-5.3）
-    private func unitColors(_ item: Item) -> (background: Color, foreground: Color) {
-        switch status(of: item, today: today, nearDays: nearDays) {
-        case .normal: return (.statusNormalBG, .statusNormalFG)
-        case .near: return (.statusNearBG, .statusNearFG)
-        case .expired: return (.statusExpiredBG, .statusExpiredFG)
-        }
-    }
-}
 
 /// 格位弹窗：列出该格内所有件（位置码、名称、条码后四位、日期、状态徽章）
 struct CellSheet: View {
@@ -269,10 +184,10 @@ struct CellSheet: View {
                 } else {
                     List(cellItems) { item in
                         HStack(spacing: 12) {
-                            Text(item.locationCode)
-                                .font(.system(size: 13, weight: .bold).monospacedDigit())
-                                .foregroundStyle(Color.brandGreen)
-                                .frame(width: 34, alignment: .leading)
+                            LocationBadge(code: item.locationCode,
+                                          status: status(of: item, today: today, nearDays: nearDays),
+                                          prominent: true)
+                                .frame(width: 44, alignment: .leading)
                             VStack(alignment: .leading, spacing: 3) {
                                 HStack(spacing: 6) {
                                     Text(item.displayName).font(.subheadline.weight(.semibold))

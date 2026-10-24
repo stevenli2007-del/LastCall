@@ -5,7 +5,7 @@
 
 ---
 
-## 1. 文件结构：严格 6 个 Swift 文件
+## 1. 文件结构：严格 9 个 Swift 文件
 
 > 针对 Steven 的诉求「代码不想分开写，容易乱」——
 > 这里的原则是：**不按技术层横切、只按功能模块竖切**。每个文件是一个你能一整段读完的东西，而不是二十个只装一个 struct 的碎片。
@@ -17,16 +17,20 @@ LastCall/App/
 ├── ContentView.swift      ③ 根视图 + 首页 + 设置  ≤ 380 行
 ├── ContainerViews.swift   ④ 容器列表 + 格子网格 + 格位弹窗  ≤ 400 行
 ├── AddItemViews.swift     ⑤ 上架流程（扫码 + 表单 + 写入）  ≤ 320 行
-└── ScanViews.swift        ⑥ 扫码封装 + 下架流程（验证 + 补位） ≤ 380 行
+├── ScanViews.swift        ⑥ 扫码封装 + 下架流程（验证 + 补位） ≤ 380 行
+├── ContainerShelfView.swift  ⑦ 柜体正视图渲染（冰柜 / 货架 + 位置徽章） ≤ 300 行
+├── LoginViews.swift       ⑧ 登录页（手机号 + 密码 + 语言切换 + 角色） ≤ 200 行
+└── SellViews.swift        ⑨ 临期专区（挂牌表单 + 商品卡页） ≤ 300 行
 ```
 
 > ⑤ 于 H3 新增，理由见 TECHSTACK.md 的 **ADR-005**（Steven 2026-10-24 批准）。
 > ⑥ 规划时估 ≤320 行，H4 实装后为 377 行（下架核验的状态机比预估大），2026-10-24 上调至 ≤380。
+> ⑦⑧⑨ 于 H7 新增，理由见 TECHSTACK.md 的 **ADR-006**（Steven 2026-10-24 16:44 批准）。
 > 硬上限仍是 **CR-1.2 的 400 行**；上表各文件的数值只是规划值，超过规划值但不超过 400 不算违规。
 
 | 规则 | 说明 |
 |---|---|
-| **CR-1.1** | **不得新增第 7 个 Swift 文件**，除非先在 TECHSTACK.md §4 登记并说明理由 |
+| **CR-1.1** | **不得新增第 10 个 Swift 文件**，除非先在 TECHSTACK.md §4 登记并说明理由 |
 | **CR-1.2** | 单文件超过 **400 行**必须拆分或重构，原因：SwiftUI Preview 会显著变卡 |
 | **CR-1.3** | 每个文件顶部必须有统一的 `// MARK:` 目录（见 §2） |
 
@@ -40,6 +44,9 @@ LastCall/App/
 | ④ `ContainerViews.swift` | 容器列表、创建表单、格子网格、格位弹窗 | 条码扫描 UI、上架写入 |
 | ⑤ `AddItemViews.swift` | 上架入口、扫码对接触发、日期与保质期表单、过期预览、写入 `nextSlot` | 下架逻辑 |
 | ⑥ `ScanViews.swift` | VisionKit 封装、扫码 sheet、下架确认 | 数据写入以外的业务逻辑 |
+| ⑦ `ContainerShelfView.swift` | 柜体正视图（冰柜 / 货架外框、层板、格位排布）、位置徽章 `LocationBadge` | 任何数据写入 |
+| ⑧ `LoginViews.swift` | 登录页、手机号 / 密码校验、语言切换器、角色选择 | 真实账号体系（Deferred） |
+| ⑨ `SellViews.swift` | 临期专区：挂牌表单、商品卡页 | 下单 / 支付 / 客户账号（本轮不做） |
 
 ---
 
