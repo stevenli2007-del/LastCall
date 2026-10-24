@@ -271,6 +271,28 @@ struct SettingsView: View {
 
 // MARK: - Helpers
 
+/// 填充进度条，容器列表与容器详情页共用
+struct FillBar: View {
+    let ratio: Double
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule().fill(Color(hex: 0xE7EBE5))
+                Capsule().fill(Color.brandGreen).frame(width: max(4, geo.size.width * min(1, max(0, ratio))))
+            }
+        }
+        .frame(height: 8)
+    }
+}
+
+/// 某格内的商品，按纵深升序（序号 1 是最前端，最先被取走）
+func items(in container: Container, cell: Int) -> [Item] {
+    container.items
+        .filter { $0.cellIndex == cell }
+        .sorted { $0.depthIndex < $1.depthIndex }
+}
+
 extension Color {
     init(hex: UInt, opacity: Double = 1) {
         self.init(.sRGB,

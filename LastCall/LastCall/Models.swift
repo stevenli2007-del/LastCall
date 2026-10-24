@@ -129,9 +129,7 @@ final class Item {
         Calendar.current.dateByAddingDays(shelfLifeDays, to: productionDate)
     }
 
-    var barcodeSuffix4: String {
-        barcode.count > 4 ? String(barcode.suffix(4)) : barcode
-    }
+    var barcodeSuffix4: String { barcodeSuffix(of: barcode) }
 
     /// 如 A1、B3、AA2
     var locationCode: String {
@@ -188,6 +186,16 @@ enum ItemStatus: String, Codable, CaseIterable {
     }
 }
 
+enum AddItemError: LocalizedError {
+    case containerFull
+
+    var errorDescription: String? {
+        switch self {
+        case .containerFull: return "容器已装满，没有空位"
+        }
+    }
+}
+
 enum RemoveError: LocalizedError {
     case barcodeMismatch
     case missingContainer
@@ -207,6 +215,11 @@ extension Calendar {
     }
 }
 
+/// 列表与提醒只显示后四位；不足四位时原样返回。上架预览也用它，保证两处口径一致
+func barcodeSuffix(of barcode: String) -> String {
+    barcode.count > 4 ? String(barcode.suffix(4)) : barcode
+}
+
 /// 格子索引 → Excel 风格列名。0 → "A"，25 → "Z"，26 → "AA"，27 → "AB"
 /// 原型 index.html 的 `String.fromCharCode(65 + ci)` 在 ci ≥ 26 会输出 `[`、`]`，必须用它替代
 func excelColumnName(_ index: Int) -> String {
@@ -224,9 +237,14 @@ func excelColumnName(_ index: Int) -> String {
 
 /// 状态判定。比较前必须把今天与过期日都归一化到当天 00:00（CR-4.3），否则午后会差一天
 func status(of item: Item, today: Date, nearDays: Int) -> ItemStatus {
+    status(ofExpiry: item.expiryDate, today: today, nearDays: nearDays)
+}
+
+/// 判定的唯一实现。上架预览时还没有 Item 实例，也走这里 —— 避免出现第二套写法
+func status(ofExpiry expiryDate: Date, today: Date, nearDays: Int) -> ItemStatus {
     let cal = Calendar.current
     let t = cal.startOfDay(for: today)
-    let e = cal.startOfDay(for: item.expiryDate)
+    let e = cal.startOfDay(for: expiryDate)
     let days = cal.dateComponents([.day], from: t, to: e).day ?? 0
 
     if days <= 0 { return .expired }      // today >= expiry
@@ -247,6 +265,32 @@ func nextSlot(in container: Container, preferredCell: Int) -> (cell: Int, depth:
         if let d = nextDepth(in: container, cell: c) { return (c, d) }
     }
     return nil
+}
+
+/// 上架：算下一个空位 → 写入 → save。位置由 nextSlot 决定（不变量 I1 / I3 / I4）
+/// 容器全满时抛错，不写入任何数据
+@discardableResult
+func addItem(barcode: String,
+             name: String,
+             productionDate: Date,
+             shelfLifeDays: Int,
+             to container: Container,
+             preferredCell: Int,
+             context: ModelContext) throws -> Item {
+    guard let slot = nextSlot(in: container, preferredCell: preferredCell) else {
+        throw AddItemError.containerFull
+    }
+    let item = Item(barcode: barcode,
+                    name: name,
+                    productionDate: productionDate,
+                    shelfLifeDays: shelfLifeDays,
+                    cellIndex: slot.cell,
+                    depthIndex: slot.depth)
+    item.container = container
+    container.items.append(item)
+    context.insert(item)
+    try context.save()
+    return item
 }
 
 /// 下架：验证 → 留档 → 删除 → 同格后续前移。四步在同一事务内（CR-4.5 / 不变量 I2）

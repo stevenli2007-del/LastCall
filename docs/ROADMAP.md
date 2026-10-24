@@ -1,6 +1,6 @@
 # LastCall 实施路线（ROADMAP）
 
-**当前状态：** **H0 已完成并验收通过**（2026-10-24 12:38，真机安装成功）。下一步 H1。
+**当前状态：** **H3 代码已完成**（2026-10-24 13:35，真机已装机启动）。下一步 H4。
 **总原则：** **先打通、再堆功能。** H0 不过，后面全是沉没成本；H0 一过，剩下的是纯代码问题，可以并行加速。
 
 > ⏱ 所有时长为**净开发时间估算**，不含烧屏、会议、觅食。
@@ -111,9 +111,10 @@ iPhone：**设置 → 隐私与安全性 → 开发者模式** → 打开 → �
 ### H3 — 上架 Add（2h）
 
 **产出：**
-- `ScanViews.swift`：VisionKit `DataScannerViewController` 的 `UIViewControllerRepresentable` 封装
-- 上架表单：扫码 / 手输条码 → 日期 → 保质天数（默认继承上一件）→ **实时过期日期预览** → 确认
-- 写入 `nextSlot(in:preferredCell:)` 算出的位置
+- `AddItemViews.swift`：上架表单 —— 扫码 / 手输条码 → 日期 → 保质天数（默认继承上一件）→ **实时过期日期预览** → 确认
+- `ScanViews.swift`：VisionKit `DataScannerViewController` 的 `UIViewControllerRepresentable` 封装 + 手输兜底（H4 下架核验复用）
+- 写入走 `Models.swift` 的 `addItem(...)`，位置由 `nextSlot(in:preferredCell:)` 算出
+- ⚠️ 项目用 `GENERATE_INFOPLIST_FILE`（没有 Info.plist 文件），相机权限必须写成 build setting `INFOPLIST_KEY_NSCameraUsageDescription`
 
 **完成的定义：**
 - [ ] PRD 验收标准 2：第二件的保质天数默认继承上一件，改它不影响已存商品
@@ -230,7 +231,7 @@ iPhone：**设置 → 隐私与安全性 → 开发者模式** → 打开 → �
 | H0 签名链路 | 0.5h | ~0.8h | 2026-10-24 12:38 | ✅ 通过。真机 Zhongyuan 的 iPhone 16 Pro Max（iOS 26.6.2）安装成功，App 可运行不闪退。证据：`security find-identity` = 1 valid identity（Apple Development: stevenli2007@berkeley.edu）；`devicectl device info apps` 列出 `LastCall / berkeley.stevenli.LastCall / 1.0`。耗时主要在等 USB 设备到位与开发者模式开启，非签名故障 |
 | H1 数据层+首页 | 1.5h | ~0.4h | 2026-10-24 12:52 | ✅ 代码完成。Models.swift（4 个 @Model + 全部算法 + seed）、LastCallApp.swift（ModelContainer + seed）、ContentView.swift（TabView + 首页四卡 + 今日提醒列表）；样板 Item.swift 已删除，现 3 个 Swift 文件（252/59/312 行）。模拟器与真机均 BUILD SUCCEEDED，真机已装机启动。`excelColumnName` 自检 7/7 通过。⏳ 两条待目视验收：首页数字是否为「在库 6 / 临期 2 / 过期 0 / 容器 3」、杀进程重开数据仍在 |
 | H2 容器+格子 | 2h | ~0.3h | 2026-10-24 13:10 | ✅ 代码完成。ContainerViews.swift（容器列表 Tile + 新建表单 + 正视图格子网格 + 格位弹窗）；ContentView.swift 加「容器」「设置」两个 tab，首页提醒可跳容器并高亮格子，设置页新增「重置演示数据」。模拟器与真机均 BUILD SUCCEEDED（零 error 零 warning），真机已装机启动。⏳ 待目视验收：3×2×5 正视图恰 6 格 A–F、点首页提醒跳转并高亮、重置按钮可用 |
-| H3 上架 | 2h | | | |
+| H3 上架 | 2h | ~0.3h | 2026-10-24 13:35 | ✅ 代码完成。新增 `AddItemViews.swift`(201) + `ScanViews.swift`(206)；Models 加 `addItem` / `status(ofExpiry:)` / `barcodeSuffix(of:)`；容器详情页右上角 + 进上架表单（默认格子 = 高亮格或第一个未满格）；VisionKit 封装 + 相机不可用手输兜底；pbxproj 加 `INFOPLIST_KEY_NSCameraUsageDescription`（已验证写入产物 Info.plist）。为腾空间把 `FillBar` / `items(in:cell:)` 从 ContainerViews 移到 ContentView Helpers。模拟器 + 真机 BUILD SUCCEEDED 零 warning，真机已装机启动。⏳ 待目视验收：连续录第二件时保质天数继承上一件、输 `0012345678905` 前导零保住、上架后格子立刻出现新色块 |
 | H4 下架 | 1.5h | | | |
 | H5 打磨+设置 | 1.5h | | | |
 | H6 联调+录屏 | 1.5h | | | |

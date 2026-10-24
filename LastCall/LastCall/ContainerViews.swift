@@ -67,6 +67,7 @@ struct ContainerDetailView: View {
     @Query private var containers: [Container]
     @Query private var stores: [Store]
     @State private var selectedCell: Int?
+    @State private var showingAddItem = false
 
     private let today = Date()
 
@@ -77,6 +78,13 @@ struct ContainerDetailView: View {
     private var focusCell: Int? {
         guard let id = route.focusItemID else { return nil }
         return container?.items.first { $0.id == id }?.cellIndex
+    }
+
+    /// 上架默认落在高亮格；没有高亮时落在第一个还有空位的格子
+    private var defaultAddCell: Int {
+        guard let container else { return 0 }
+        if let focusCell { return focusCell }
+        return (0..<container.cellCount).first { nextDepth(in: container, cell: $0) != nil } ?? 0
     }
 
     var body: some View {
@@ -105,6 +113,16 @@ struct ContainerDetailView: View {
                                     set: { if !$0 { selectedCell = nil } })) {
             if let cell = selectedCell, let container {
                 CellSheet(container: container, cellIndex: cell, today: today, nearDays: nearDays)
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { showingAddItem = true } label: { Image(systemName: "plus") }
+            }
+        }
+        .sheet(isPresented: $showingAddItem) {
+            if let container {
+                AddItemSheet(container: container, preferredCell: defaultAddCell)
             }
         }
     }
@@ -166,20 +184,6 @@ struct ContainerTile: View {
         }
         .padding(14)
         .background(.background, in: .rect(cornerRadius: 14))
-    }
-}
-
-struct FillBar: View {
-    let ratio: Double
-
-    var body: some View {
-        GeometryReader { geo in
-            ZStack(alignment: .leading) {
-                Capsule().fill(Color(hex: 0xE7EBE5))
-                Capsule().fill(Color.brandGreen).frame(width: max(4, geo.size.width * min(1, max(0, ratio))))
-            }
-        }
-        .frame(height: 8)
     }
 }
 
@@ -253,13 +257,6 @@ struct CellBox: View {
         case .expired: return (.statusExpiredBG, .statusExpiredFG)
         }
     }
-}
-
-/// 某格内的商品，按纵深升序（序号 1 是最前端，最先被取走）
-func items(in container: Container, cell: Int) -> [Item] {
-    container.items
-        .filter { $0.cellIndex == cell }
-        .sorted { $0.depthIndex < $1.depthIndex }
 }
 
 /// 格位弹窗：列出该格内所有件（位置码、名称、条码后四位、日期、状态徽章）
