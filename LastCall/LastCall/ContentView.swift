@@ -259,13 +259,35 @@ struct SettingsView: View {
 
     private var store: Store? { stores.first }
 
+    /// 直接读写门店的阈值：改完立刻写库，首页的四张卡与提醒列表由 @Query 自动重算（验收标准 10）
+    private var nearDaysBinding: Binding<Int> {
+        Binding(
+            get: { store?.nearExpiryDays ?? 2 },
+            set: { days in
+                store?.nearExpiryDays = days
+                try? context.save()
+            }
+        )
+    }
+
     var body: some View {
         NavigationStack {
             Form {
                 Section("门店") {
                     LabeledContent("名称", value: store?.name ?? "未初始化门店")
                     LabeledContent("时区", value: store?.timezoneIdentifier ?? "—")
-                    LabeledContent("临期阈值", value: "\(store?.nearExpiryDays ?? 2) 天")
+                }
+
+                Section("临期阈值") {
+                    Picker("提前预警", selection: nearDaysBinding) {
+                        ForEach([1, 2, 3, 5, 7], id: \.self) { days in
+                            Text("\(days) 天").tag(days)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    Text("过期前 N 天起标记为临期。改完立即生效，切回首页就能看到临期数量的变化。")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
 
                 Section("演示数据") {
