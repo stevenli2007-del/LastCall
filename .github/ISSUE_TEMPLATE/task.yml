@@ -1,0 +1,48 @@
+name: Development task
+description: Create a scoped product or engineering task
+title: "[Task]: "
+labels: []
+body:
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: What should the user or system be able to do?
+      placeholder: Describe one concrete result.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: List observable conditions that mean this task is complete.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+  - type: textarea
+    id: contract
+    attributes:
+      label: Shared contract and dependencies
+      description: Include relevant PRD/schema/API references and dependent tasks.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Add
+        - Remove
+        - Home and expiry
+        - Auth and store access
+        - Database and migrations
+        - Infrastructure
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification plan
+      description: What evidence will the PR include?

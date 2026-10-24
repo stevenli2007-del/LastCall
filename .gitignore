@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Expo / React Native build artifacts
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Generated native projects (Expo CNG / prebuild)
+ios/
+android/
+*.keystore
+*.jks
+
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Local agent workspace
+.workbuddy/
