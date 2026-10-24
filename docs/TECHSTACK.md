@@ -89,6 +89,19 @@
 
 **理由：** PRD §6 明确将售卖列为"暂不包含"，保留入口会造成 scope 表述与实际不符，容易被评委质疑。
 
+### ADR-005：上架流程拆出 `AddItemViews.swift`（第 6 个文件）
+
+**决策：** H3 的上架表单单独放进 `AddItemViews.swift`，不塞进 `ContainerViews.swift`。
+
+**背景：** H2 结束时 `ContainerViews.swift` 已达 400 行（CR-1.2 上限），而上架表单预计还要 ~130 行，塞进去必然超限。Steven 于 2026-10-24 13:14 选定本方案。
+
+**理由：**
+1. **上架是一条独立的用户流程**（选格 → 扫码 → 日期 → 保质期 → 预览 → 写入），与「容器浏览」不是同一件事，单独成文件更好读。
+2. 符合 CODINGRULES §1「**不按技术层横切、只按功能模块竖切**」—— 这是按流程竖切，不是按 View / ViewModel 横切。
+3. 不违反「严格 5 个文件」的初衷：该约束是为了防止碎片化，不是为了凑数字。文件数仍远少于常规 SwiftUI 项目。
+
+**代价：** 文件数 5 → 6。本文件与 `CODINGRULES.md` 已同步登记。
+
 ---
 
 ## 4. 项目结构
@@ -103,10 +116,11 @@ LastCall/
         ├── Models.swift
         ├── ContentView.swift
         ├── ContainerViews.swift
+        ├── AddItemViews.swift      ← H3 新增（见 ADR-005）
         └── ScanViews.swift
 ```
 
-**严格 5 个 Swift 文件。** 新增文件需先更新 `CODINGRULES.md` 与本文档。
+**严格 6 个 Swift 文件**（原为 5 个，`AddItemViews.swift` 于 H3 按 ADR-005 登记）。新增文件需先更新 `CODINGRULES.md` 与本文档。
 
 `Info.plist` 必需项：
 - `NSCameraUsageDescription` — "用于扫描商品条码以记录和下架商品"

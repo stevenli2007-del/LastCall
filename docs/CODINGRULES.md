@@ -5,23 +5,26 @@
 
 ---
 
-## 1. 文件结构：严格 5 个 Swift 文件
+## 1. 文件结构：严格 6 个 Swift 文件
 
 > 针对 Steven 的诉求「代码不想分开写，容易乱」——
 > 这里的原则是：**不按技术层横切、只按功能模块竖切**。每个文件是一个你能一整段读完的东西，而不是二十个只装一个 struct 的碎片。
 
 ```
 LastCall/App/
-├── LastCallApp.swift      ① App 入口        ≤ 80 行
-├── Models.swift           ② 数据 + 全部算法  ≤ 260 行
+├── LastCallApp.swift      ① App 入口            ≤ 80 行
+├── Models.swift           ② 数据 + 全部算法      ≤ 400 行
 ├── ContentView.swift      ③ 根视图 + 首页 + 设置  ≤ 380 行
-├── ContainerViews.swift   ④ 容器详情 + 格子网格 + 上架表单  ≤ 380 行
-└── ScanViews.swift        ⑤ 扫码 UI + 下架流程  ≤ 320 行
+├── ContainerViews.swift   ④ 容器列表 + 格子网格 + 格位弹窗  ≤ 400 行
+├── AddItemViews.swift     ⑤ 上架流程（扫码 + 表单 + 写入）  ≤ 320 行
+└── ScanViews.swift        ⑥ 下架流程（扫码验证 + 补位）     ≤ 320 行
 ```
+
+> ⑤ 于 H3 新增，理由见 TECHSTACK.md 的 **ADR-005**（Steven 2026-10-24 批准）。
 
 | 规则 | 说明 |
 |---|---|
-| **CR-1.1** | **不得新增第 6 个 Swift 文件**，除非先在 TECHSTACK.md §4 登记并说明理由 |
+| **CR-1.1** | **不得新增第 7 个 Swift 文件**，除非先在 TECHSTACK.md §4 登记并说明理由 |
 | **CR-1.2** | 单文件超过 **400 行**必须拆分或重构，原因：SwiftUI Preview 会显著变卡 |
 | **CR-1.3** | 每个文件顶部必须有统一的 `// MARK:` 目录（见 §2） |
 
@@ -32,8 +35,9 @@ LastCall/App/
 | ① `LastCallApp.swift` | `@main`、ModelContainer 配置、Store seed、scheme/全局外观 | 任何业务代码 |
 | ② `Models.swift` | 全部 `@Model`、`enum`、算法（位置/日期/状态）、`AppDate`、`excelColumnName` | 任何 SwiftUI View |
 | ③ `ContentView.swift` | TabView、首页各项卡片、设置页、根导航状态 | 容器内部逻辑 |
-| ④ `ContainerViews.swift` | 容器创建表单、格子网格、格位弹窗、上架表单 | 条码扫描 UI |
-| ⑤ `ScanViews.swift` | VisionKit 封装、扫码 sheet、下架确认 | 数据写入以外的业务逻辑 |
+| ④ `ContainerViews.swift` | 容器列表、创建表单、格子网格、格位弹窗 | 条码扫描 UI、上架写入 |
+| ⑤ `AddItemViews.swift` | 上架入口、扫码对接触发、日期与保质期表单、过期预览、写入 `nextSlot` | 下架逻辑 |
+| ⑥ `ScanViews.swift` | VisionKit 封装、扫码 sheet、下架确认 | 数据写入以外的业务逻辑 |
 
 ---
 
