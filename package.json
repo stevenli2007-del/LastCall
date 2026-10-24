@@ -1,0 +1,15 @@
+{
+  "name": "lastcall",
+  "version": "0.0.0",
+  "private": true,
+  "description": "临期宝 LastCall 仓库根：Supabase 本地开发、迁移与类型生成工具链",
+  "scripts": {
+    "db:setup": "bash scripts/setup-supabase.sh",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:status": "supabase status",
+    "db:reset": "supabase db reset",
+    "db:migration": "supabase migration new",
+    "db:types": "supabase gen types typescript --local > apps/mobile/src/lib/database.types.ts"
+  }
+}

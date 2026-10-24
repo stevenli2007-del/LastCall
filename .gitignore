@@ -34,5 +34,10 @@ Thumbs.db
 # TypeScript cache
 *.tsbuildinfo
 
+# Supabase local dev artifacts
+supabase/.branches/
+supabase/.temp/
+supabase/.env
+
 # Local agent workspace
 .workbuddy/
