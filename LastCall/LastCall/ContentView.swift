@@ -18,6 +18,14 @@ struct ContentView: View {
                 .tabItem {
                     Label("首页", systemImage: "house.fill")
                 }
+            ContainerListView()
+                .tabItem {
+                    Label("容器", systemImage: "square.grid.2x2.fill")
+                }
+            SettingsView()
+                .tabItem {
+                    Label("设置", systemImage: "gearshape.fill")
+                }
         }
     }
 }
@@ -63,6 +71,9 @@ struct HomeView: View {
             }
             .background(Color.paper.ignoresSafeArea())
             .navigationTitle("临期宝")
+            .navigationDestination(for: ContainerRoute.self) { route in
+                ContainerDetailView(route: route)
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Text(store?.name ?? "未初始化门店")
@@ -96,7 +107,15 @@ struct HomeView: View {
                 .frame(minHeight: 160)
             } else {
                 ForEach(alertItems) { item in
-                    AlertRow(item: item, today: today, nearDays: nearDays)
+                    if let containerID = item.container?.id {
+                        NavigationLink(value: ContainerRoute(containerID: containerID,
+                                                             focusItemID: item.id)) {
+                            AlertRow(item: item, today: today, nearDays: nearDays)
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        AlertRow(item: item, today: today, nearDays: nearDays)
+                    }
                 }
             }
         }
@@ -197,6 +216,56 @@ struct StatusBadge: View {
         case .near: return .statusNearFG
         case .expired: return .statusExpiredFG
         }
+    }
+}
+
+// MARK: - Settings
+
+struct SettingsView: View {
+    @Query private var stores: [Store]
+    @Query private var containers: [Container]
+    @Query private var records: [RemovalRecord]
+    @Environment(\.modelContext) private var context
+    @State private var confirmingReset = false
+
+    private var store: Store? { stores.first }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("门店") {
+                    LabeledContent("名称", value: store?.name ?? "未初始化门店")
+                    LabeledContent("时区", value: store?.timezoneIdentifier ?? "—")
+                    LabeledContent("临期阈值", value: "\(store?.nearExpiryDays ?? 2) 天")
+                }
+
+                Section("演示数据") {
+                    Text("重置会清空所有容器、商品与下架记录，然后重新载入三个演示容器。手机上随时可用，不需要连 Xcode。")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    Button("重置演示数据", role: .destructive) { confirmingReset = true }
+                }
+            }
+            .navigationTitle("设置")
+            .confirmationDialog("重置演示数据？", isPresented: $confirmingReset, titleVisibility: .visible) {
+                Button("重置", role: .destructive) { resetDemoData() }
+                Button("取消", role: .cancel) { }
+            } message: {
+                Text("当前所有数据将被清空，无法恢复。")
+            }
+        }
+    }
+
+    private func resetDemoData() {
+        for record in records { context.delete(record) }
+        for container in containers { context.delete(container) }   // 级联删除其下 Item
+        guard let store else { return }
+        for container in SeedData.makeDemoContainers() {
+            container.store = store
+            store.containers.append(container)
+            context.insert(container)
+        }
+        try? context.save()
     }
 }
 
