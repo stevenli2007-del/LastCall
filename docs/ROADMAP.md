@@ -1,6 +1,6 @@
 # LastCall 实施路线（ROADMAP）
 
-**当前状态：** H0 未开始（Xcode 签名链路尚未打通）
+**当前状态：** **H0 已完成并验收通过**（2026-10-24 12:38，真机安装成功）。下一步 H1。
 **总原则：** **先打通、再堆功能。** H0 不过，后面全是沉没成本；H0 一过，剩下的是纯代码问题，可以并行加速。
 
 > ⏱ 所有时长为**净开发时间估算**，不含烧屏、会议、觅食。
@@ -227,7 +227,7 @@ iPhone：**设置 → 隐私与安全性 → 开发者模式** → 打开 → �
 
 | 阶段 | 计划 | 实际 | 完成时间 | 备注 |
 |---|---|---|---|---|
-| H0 签名链路 | 0.5h | | | 🔴 熔断关 |
+| H0 签名链路 | 0.5h | ~0.8h | 2026-10-24 12:38 | ✅ 通过。真机 Zhongyuan 的 iPhone 16 Pro Max（iOS 26.6.2）安装成功，App 可运行不闪退。证据：`security find-identity` = 1 valid identity（Apple Development: stevenli2007@berkeley.edu）；`devicectl device info apps` 列出 `LastCall / berkeley.stevenli.LastCall / 1.0`。耗时主要在等 USB 设备到位与开发者模式开启，非签名故障 |
 | H1 数据层+首页 | 1.5h | | | |
 | H2 容器+格子 | 2h | | | |
 | H3 上架 | 2h | | | |

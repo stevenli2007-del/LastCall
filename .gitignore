@@ -16,3 +16,6 @@ DerivedData/
 
 # 本机状态
 .DS_Store
+
+# WorkBuddy 项目数据（本机记忆与索引，不入仓）
+.workbuddy/
