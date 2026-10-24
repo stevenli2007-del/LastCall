@@ -124,6 +124,31 @@ struct HomeView: View {
 
 // MARK: - Subviews
 
+/// 容器列表行（容器 tab 用）。放这里是因为 ContainerViews 已接近 400 行上限
+struct ContainerTile: View {
+    let container: Container
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: container.type.symbolName)
+                .font(.title3)
+                .foregroundStyle(Color.brandGreen)
+                .frame(width: 34)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(container.name)
+                    .font(.subheadline.weight(.semibold))
+                Text("\(container.usedCount) 件商品 · 正视图 \(container.rows) × \(container.columns)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                FillBar(ratio: container.fillRatio)
+            }
+        }
+        .padding(14)
+        .background(.background, in: .rect(cornerRadius: 14))
+    }
+}
+
 struct StatCard: View {
     let title: String
     let value: Int

@@ -253,9 +253,13 @@ func status(ofExpiry expiryDate: Date, today: Date, nearDays: Int) -> ItemStatus
 }
 
 /// 该格内下一个可用纵深序号；格子已满返回 nil
+///
+/// I2 保证格内从 0 连续无空洞，此时「件数」与「最大序号 + 1」相等。
+/// 取两者的较大值是防御：万一历史上出现过空洞，也不会把新商品写到一个已被占用的位置。
 func nextDepth(in container: Container, cell: Int) -> Int? {
-    let used = container.items.filter { $0.cellIndex == cell }.count
-    return used < container.depthCapacity ? used : nil
+    let indices = container.items.filter { $0.cellIndex == cell }.map(\.depthIndex)
+    let next = max(indices.count, (indices.max() ?? -1) + 1)
+    return next < container.depthCapacity ? next : nil
 }
 
 /// 下一个空位：优先 preferredCell，该格满则顺延找下一格；全部满返回 nil

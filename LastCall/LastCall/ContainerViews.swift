@@ -67,7 +67,7 @@ struct ContainerDetailView: View {
     @Query private var containers: [Container]
     @Query private var stores: [Store]
     @State private var selectedCell: Int?
-    @State private var showingAddItem = false
+    @State private var addItemCell: Int?
 
     private let today = Date()
 
@@ -85,6 +85,13 @@ struct ContainerDetailView: View {
         guard let container else { return 0 }
         if let focusCell { return focusCell }
         return (0..<container.cellCount).first { nextDepth(in: container, cell: $0) != nil } ?? 0
+    }
+
+    /// 从格位弹窗里点「上架到此格」：先收起弹窗，再开上架表单
+    /// （SwiftUI 不允许同一帧内连续切换两个 sheet，故错开一拍）
+    private func openAddItem(in cell: Int) {
+        selectedCell = nil
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { addItemCell = cell }
     }
 
     var body: some View {
@@ -112,17 +119,21 @@ struct ContainerDetailView: View {
         .sheet(isPresented: Binding(get: { selectedCell != nil },
                                     set: { if !$0 { selectedCell = nil } })) {
             if let cell = selectedCell, let container {
-                CellSheet(container: container, cellIndex: cell, today: today, nearDays: nearDays)
+                CellSheet(container: container,
+                          cellIndex: cell,
+                          today: today,
+                          nearDays: nearDays) { openAddItem(in: $0) }
             }
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button { showingAddItem = true } label: { Image(systemName: "plus") }
+                Button { addItemCell = defaultAddCell } label: { Image(systemName: "plus") }
             }
         }
-        .sheet(isPresented: $showingAddItem) {
-            if let container {
-                AddItemSheet(container: container, preferredCell: defaultAddCell)
+        .sheet(isPresented: Binding(get: { addItemCell != nil },
+                                    set: { if !$0 { addItemCell = nil } })) {
+            if let container, let cell = addItemCell {
+                AddItemSheet(container: container, preferredCell: cell)
             }
         }
     }
@@ -162,30 +173,6 @@ struct ContainerDetailView: View {
 }
 
 // MARK: - Subviews
-
-struct ContainerTile: View {
-    let container: Container
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: container.type.symbolName)
-                .font(.title3)
-                .foregroundStyle(Color.brandGreen)
-                .frame(width: 34)
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text(container.name)
-                    .font(.subheadline.weight(.semibold))
-                Text("\(container.usedCount) 件商品 · 正视图 \(container.rows) × \(container.columns)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                FillBar(ratio: container.fillRatio)
-            }
-        }
-        .padding(14)
-        .background(.background, in: .rect(cornerRadius: 14))
-    }
-}
 
 /// 单个格子：标签 + 纵深小色块（沿用原型 `.cell` / `.unit` 视觉）
 struct CellBox: View {
@@ -265,6 +252,8 @@ struct CellSheet: View {
     let cellIndex: Int
     let today: Date
     let nearDays: Int
+    /// 直接把这一格作为目标打开上架表单（用户点格子就是想在这一格里操作）
+    let onAddItem: (Int) -> Void
 
     @Environment(\.dismiss) private var dismiss
 
@@ -304,6 +293,17 @@ struct CellSheet: View {
             }
             .navigationTitle("格子 \(excelColumnName(cellIndex))")
             .navigationBarTitleDisplayMode(.inline)
+            .safeAreaInset(edge: .bottom) {
+                Button { onAddItem(cellIndex) } label: {
+                    Label("上架到 \(excelColumnName(cellIndex)) 格", systemImage: "plus")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Color.brandGreen)
+                .padding(16)
+                .background(.bar)
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("完成") { dismiss() }

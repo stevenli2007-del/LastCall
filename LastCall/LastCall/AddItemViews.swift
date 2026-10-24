@@ -31,6 +31,7 @@ struct AddItemSheet: View {
     @State private var savedLocation: String?
     @State private var errorMessage: String?
     @State private var didLoadDefaultShelfLife = false
+    @State private var refreshTick = 0
 
     private let today = Date()
 
@@ -41,8 +42,15 @@ struct AddItemSheet: View {
     private var trimmedName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
 
     /// 位置由用户选的格子决定；该格满时 nextSlot 顺延到下一个有空位的格子
+    /// 读一次 refreshTick：保存后强制本视图重算，避免预览停在旧位置
     private var slot: (cell: Int, depth: Int)? {
-        nextSlot(in: container, preferredCell: selectedCell)
+        _ = refreshTick
+        return nextSlot(in: container, preferredCell: selectedCell)
+    }
+
+    /// 所选格子当前已占用的件数，给预览核对用
+    private var selectedCellUsed: Int {
+        container.items.filter { $0.cellIndex == selectedCell }.count
     }
 
     /// 格子选择器的标签：A · 2/5；已满的标「满」
@@ -162,7 +170,8 @@ struct AddItemSheet: View {
                     StatusBadge(status: previewStatus)
                 }
                 LabeledContent("存入位置", value: locationPreview)
-                Text("过期日期 = 生产日期 + 预计存储天数，生产当天算第 0 天")
+                LabeledContent("该格现有", value: "\(selectedCellUsed)/\(container.depthCapacity) 件")
+                Text("位置 = 所选格子的下一个空位，纵深按顺序自动排（格内不能留空洞）")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -213,6 +222,7 @@ struct AddItemSheet: View {
             errorMessage = nil
             barcode = ""
             name = ""
+            refreshTick += 1          // 强制重算 slot，预览立刻显示下一个空位
         } catch {
             savedLocation = nil
             errorMessage = error.localizedDescription
