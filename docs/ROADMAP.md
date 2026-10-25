@@ -258,4 +258,5 @@ iPhone：**设置 → 隐私与安全性 → 开发者模式** → 打开 → �
 | H6 联调+录屏 | 1.5h | ~0.2h | 2026-10-24 14:21 | ✅ 验收通过。PRD §9 十二项验收标准全部打勾（含 9 杀进程持久化 / 11 真机扫码 / 12 飞行模式）。产出 `docs/H6-CHECKLIST.md` + `test-barcodes.html`（4 张 EAN-13）。签名有效期 2026-10-31 12:34 |
 | H7-1 柜体可视化 | 1.5h | ~0.6h | 2026-10-24 17:24 | 🔶 **部分完成**。柜体拟物两版均因「装饰层吃掉点击」回滚暂缓（commit `b2fe790`）；徽章 / 纵深效果恢复（commit `95a3b4f`）：`LocationBadge` 三处落地 + 格内纵深渐隐右移 + 临期格整格描边，模拟器截图验证，调试入口已清干净。柜体恢复需第 10 文件槽位 |
 | H7-2 编辑货架规格 | 0.75h | ~0.15h | 2026-10-24 17:12 | 🔶 代码完成，已装机待验收。新文件 `ContainerFormView.swift`（⑦ 槽位，新建/编辑复用同一表单）；右上角 `+` 改为 `slider.horizontal.3` → 编辑本柜规格；`Models.swift` 新增 `resizeConflicts`，缩容会让商品悬空时实时列出冲突并禁用保存（不做自动搬家）。SwiftData 自检 7 组用例全过 |
+| H7-3 登录页 | 0.75h | ~0.1h | 2026-10-24 17:32 | 🔶 代码完成，已装机待验收。新文件 `LoginViews.swift`（180 行，⑧ 槽位）：`RootView` 闸门 + `LoginView`（手机号正则 + 密码 ≥6 + 红字提示）+ `SignOutButton`；`@AppStorage("hasLoggedIn")` 记住登录态；设置页加「账号」Section。模拟器已验证登录页与免登路径 |
 | H7 Buffer（余项） | — | | | 第 3–7 项见 `docs/H7-OPTIMIZATION.md` |

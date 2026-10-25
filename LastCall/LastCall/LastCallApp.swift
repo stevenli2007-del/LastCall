@@ -34,7 +34,7 @@ struct LastCallApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()   // 登录闸门（ADR-007）：未登录只显示 LoginView
         }
         .modelContainer(modelContainer)
     }

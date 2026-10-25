@@ -290,6 +290,10 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                Section("账号") {
+                    SignOutButton()
+                }
+
                 Section("演示数据") {
                     Text("重置会清空所有容器、商品与下架记录，然后重新载入三个演示容器。手机上随时可用，不需要连 Xcode。")
                         .font(.footnote)
