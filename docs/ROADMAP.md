@@ -260,4 +260,5 @@ iPhone：**设置 → 隐私与安全性 → 开发者模式** → 打开 → �
 | H7-2 编辑货架规格 | 0.75h | ~0.15h | 2026-10-24 17:12 | 🔶 代码完成，已装机待验收。新文件 `ContainerFormView.swift`（⑦ 槽位，新建/编辑复用同一表单）；右上角 `+` 改为 `slider.horizontal.3` → 编辑本柜规格；`Models.swift` 新增 `resizeConflicts`，缩容会让商品悬空时实时列出冲突并禁用保存（不做自动搬家）。SwiftData 自检 7 组用例全过 |
 | H7-3 登录页 | 0.75h | ~0.1h | 2026-10-24 17:32 | 🔶 代码完成，已装机待验收。新文件 `LoginViews.swift`（180 行，⑧ 槽位）：`RootView` 闸门 + `LoginView`（手机号正则 + 密码 ≥6 + 红字提示）+ `SignOutButton`；`@AppStorage("hasLoggedIn")` 记住登录态；设置页加「账号」Section。模拟器已验证登录页与免登路径 |
 | H7-4 App Icon | 0.25h | ~0.2h | 2026-10-24 17:36 | ✅ 完成，已装机。Swift + CoreGraphics 矢量绘制（`/tmp/lcicon/gen.swift` 可复现）：品牌绿渐变底 + 白色 gable-top 牛奶盒 + 盒身倒计时时钟（右上黄弧 = 临期告警），无文字。单张 1024 PNG 填充 AppIcon.appiconset 全部三槽（default/dark/tinted）；AccentColor 同步设为 brandGreen `#187653`。产物已生成 AppIcon60x60@2x.png |
+| H7-5 门店名可改 | 0.25h | ~0.1h | 2026-10-24 17:42 | ✅ 完成，已装机。设置页「名称」只读行 → `TextField` 直绑 `Store.name`（与 H5 阈值同款 Binding 模式，改动即时落库）。为腾行数把 `nearDaysBinding` 从 10 行压到 5 行，`ContentView.swift` 399 行。SwiftData 自检：逐字改名后另开 context 读回一致，容器关系与阈值不受影响 |
 | H7 Buffer（余项） | — | | | 第 3–7 项见 `docs/H7-OPTIMIZATION.md` |

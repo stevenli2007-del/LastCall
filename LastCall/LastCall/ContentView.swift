@@ -259,22 +259,23 @@ struct SettingsView: View {
 
     private var store: Store? { stores.first }
 
-    /// 直接读写门店的阈值：改完立刻写库，首页的四张卡与提醒列表由 @Query 自动重算（验收标准 10）
+    /// 直接读写阈值：改完立刻写库，首页四张卡与提醒列表由 @Query 自动重算（验收标准 10）
     private var nearDaysBinding: Binding<Int> {
-        Binding(
-            get: { store?.nearExpiryDays ?? 2 },
-            set: { days in
-                store?.nearExpiryDays = days
-                try? context.save()
-            }
-        )
+        Binding(get: { store?.nearExpiryDays ?? 2 },
+                set: { store?.nearExpiryDays = $0; try? context.save() })
+    }
+
+    /// 门店名同样直绑 SwiftData，改动即时落库
+    private var storeNameBinding: Binding<String> {
+        Binding(get: { store?.name ?? "" },
+                set: { store?.name = $0; try? context.save() })
     }
 
     var body: some View {
         NavigationStack {
             Form {
                 Section("门店") {
-                    LabeledContent("名称", value: store?.name ?? "未初始化门店")
+                    TextField("门店名称", text: storeNameBinding)
                     LabeledContent("时区", value: store?.timezoneIdentifier ?? "—")
                 }
 
