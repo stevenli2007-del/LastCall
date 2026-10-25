@@ -75,7 +75,7 @@ Store ──1:N──> Container ──1:N──> Item
 | `barcode` | **`String`** | — | ⚠️ **必须字符串**，保留前导零。**禁止 `Int`** |
 | `name` | `String` | `""` | 选填。空时 UI 显示「未命名商品」 |
 | `productionDate` | `Date` | `.now` | 生产日期（归一化到当天 00:00 存储） |
-| `shelfLifeDays` | `Int` | `10` | 预计存储时间 / 保质天数 |
+| `shelfLifeDays` | `Int` | `10` | 保质期天数 |
 | `cellIndex` | `Int` | `0` | **格子索引（0-based）**，按行优先映射到 A/B/C… |
 | `depthIndex` | `Int` | `0` | **纵深序号（0-based）**。UI 显示时 `+1` |
 | `createdAt` | `Date` | `.now` | |

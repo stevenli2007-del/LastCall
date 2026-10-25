@@ -149,7 +149,7 @@ struct AddItemSheet: View {
                        selection: $productionDate,
                        in: ...Date.now,
                        displayedComponents: .date)
-            Stepper("预计存储 \(shelfLifeDays) 天", value: $shelfLifeDays, in: 1...365)
+            Stepper("保质期 \(shelfLifeDays) 天", value: $shelfLifeDays, in: 1...365)
             Text("默认值继承上一件商品；修改只影响当前这一件与后续默认值，不会回写已录入的商品")
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -171,6 +171,9 @@ struct AddItemSheet: View {
                 }
                 LabeledContent("存入位置", value: locationPreview)
                 LabeledContent("该格现有", value: "\(selectedCellUsed)/\(container.depthCapacity) 件")
+                Text("过期日期 = 生产日期 + 保质期，生产当天算第 0 天")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 Text("位置 = 所选格子的下一个空位，纵深按顺序自动排（格内不能留空洞）")
                     .font(.caption)
                     .foregroundStyle(.secondary)
