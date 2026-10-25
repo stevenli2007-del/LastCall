@@ -80,6 +80,13 @@ Store ──1:N──> Container ──1:N──> Item
 | `depthIndex` | `Int` | `0` | **纵深序号（0-based）**。UI 显示时 `+1` |
 | `createdAt` | `Date` | `.now` | |
 | `container` | `Container?` | nil | 反向关系 |
+| `isListed` | `Bool` | `false` | 临期专区挂牌标记（H7-6）。带默认值，SwiftData additive 轻量迁移自动处理 |
+| `originalPrice` | `Double` | `0.0` | 挂牌划线原价 |
+| `salePrice` | `Double` | `0.0` | 临期售价 |
+
+> **H7-6 设计决策：** 挂牌与商品是 1:1 关系，直接用 Item 字段而非新建 `Listing` 模型 ——
+> 避免「新增模型类型」触发真机 schema 迁移风险，且少一层注册。原 H7-OPTIMIZATION §6.2 的
+> 「生成一条 Listing」按此实现口径修正（Steven 2026-10-24 批准降级方案时未细化到模型层）。
 
 **派生属性：**
 

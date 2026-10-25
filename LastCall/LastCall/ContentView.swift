@@ -26,6 +26,7 @@ struct ContentView: View {
                 .tabItem {
                     Label("下架", systemImage: "minus.circle.fill")
                 }
+            SellTab()    // 临期专区的 tabItem 定义在 SellViews 里
             SettingsView()
                 .tabItem {
                     Label("设置", systemImage: "gearshape.fill")

@@ -105,6 +105,11 @@ final class Item {
     var createdAt: Date
     var container: Container?
 
+    // 临期专区挂牌（H7-6）。三者都有默认值 —— SwiftData 会自动做 additive 轻量迁移，真机旧数据不受影响
+    var isListed = false
+    var originalPrice = 0.0     // 划线原价
+    var salePrice = 0.0         // 临期售价
+
     init(barcode: String,
          name: String = "",
          productionDate: Date,
@@ -240,13 +245,16 @@ func status(of item: Item, today: Date, nearDays: Int) -> ItemStatus {
     status(ofExpiry: item.expiryDate, today: today, nearDays: nearDays)
 }
 
+/// 距过期还有几天，两侧都归一化到当天 00:00（CR-4.3）；≤0 即已过期
+func daysUntilExpiry(of expiryDate: Date, today: Date) -> Int {
+    let cal = Calendar.current
+    return cal.dateComponents([.day], from: cal.startOfDay(for: today),
+                              to: cal.startOfDay(for: expiryDate)).day ?? 0
+}
+
 /// 判定的唯一实现。上架预览时还没有 Item 实例，也走这里 —— 避免出现第二套写法
 func status(ofExpiry expiryDate: Date, today: Date, nearDays: Int) -> ItemStatus {
-    let cal = Calendar.current
-    let t = cal.startOfDay(for: today)
-    let e = cal.startOfDay(for: expiryDate)
-    let days = cal.dateComponents([.day], from: t, to: e).day ?? 0
-
+    let days = daysUntilExpiry(of: expiryDate, today: today)
     if days <= 0 { return .expired }      // today >= expiry
     if days <= nearDays { return .near }
     return .normal
@@ -357,9 +365,7 @@ func remove(item: Item, scannedBarcode: String, context: ModelContext) throws {
 
 enum SeedData {
     static func makeDefaultStore() -> Store {
-        Store(name: "青禾便利 · 城南店",
-              timezoneIdentifier: TimeZone.current.identifier,
-              nearExpiryDays: 2)
+        Store(name: "青禾便利 · 城南店", timezoneIdentifier: TimeZone.current.identifier, nearExpiryDays: 2)
     }
 
     /// 演示容器。日期全部相对「今天」动态生成，避免隔天失效（DATABASE §5）
@@ -372,23 +378,18 @@ enum SeedData {
         func produced(daysAgo: Int) -> Date { cal.dateByAddingDays(-daysAgo, to: today) }
 
         let fridge = Container(name: "牛奶冰柜", type: .fridge, rows: 3, columns: 2, depthCapacity: 5)
+        // 格式刻意单行：Seed 段行数直接影响 Models.swift 的总行数上限
         fridge.items.append(contentsOf: [
-            Item(barcode: "6901028075831", name: "鲜牛奶",
-                 productionDate: produced(daysAgo: 7), shelfLifeDays: 10, cellIndex: 0, depthIndex: 0),
-            Item(barcode: "6901028075831", name: "鲜牛奶",
-                 productionDate: produced(daysAgo: 5), shelfLifeDays: 10, cellIndex: 1, depthIndex: 0),
-            Item(barcode: "6901028075862", name: "酸奶",
-                 productionDate: produced(daysAgo: 15), shelfLifeDays: 14, cellIndex: 1, depthIndex: 1),
-            Item(barcode: "6901028075831", name: "鲜牛奶",
-                 productionDate: produced(daysAgo: 9), shelfLifeDays: 10, cellIndex: 2, depthIndex: 0)
+            Item(barcode: "6901028075831", name: "鲜牛奶", productionDate: produced(daysAgo: 7), shelfLifeDays: 10, cellIndex: 0, depthIndex: 0),
+            Item(barcode: "6901028075831", name: "鲜牛奶", productionDate: produced(daysAgo: 5), shelfLifeDays: 10, cellIndex: 1, depthIndex: 0),
+            Item(barcode: "6901028075862", name: "酸奶", productionDate: produced(daysAgo: 15), shelfLifeDays: 14, cellIndex: 1, depthIndex: 1),
+            Item(barcode: "6901028075831", name: "鲜牛奶", productionDate: produced(daysAgo: 9), shelfLifeDays: 10, cellIndex: 2, depthIndex: 0)
         ])
 
         let shelf = Container(name: "面包货架", type: .shelf, rows: 2, columns: 3, depthCapacity: 4)
         shelf.items.append(contentsOf: [
-            Item(barcode: "6901028080001", name: "全麦吐司",
-                 productionDate: produced(daysAgo: 2), shelfLifeDays: 7, cellIndex: 0, depthIndex: 0),
-            Item(barcode: "6901028080002", name: "牛角包",
-                 productionDate: produced(daysAgo: 3), shelfLifeDays: 5, cellIndex: 1, depthIndex: 0)
+            Item(barcode: "6901028080001", name: "全麦吐司", productionDate: produced(daysAgo: 2), shelfLifeDays: 7, cellIndex: 0, depthIndex: 0),
+            Item(barcode: "6901028080002", name: "牛角包", productionDate: produced(daysAgo: 3), shelfLifeDays: 5, cellIndex: 1, depthIndex: 0)
         ])
 
         let drinks = Container(name: "饮料冷柜", type: .fridge, rows: 2, columns: 2, depthCapacity: 6)
