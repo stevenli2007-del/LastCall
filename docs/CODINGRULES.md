@@ -18,7 +18,7 @@ LastCall/App/
 ├── ContainerViews.swift   ④ 容器列表 + 格子网格 + 格位弹窗  ≤ 400 行
 ├── AddItemViews.swift     ⑤ 上架流程（扫码 + 表单 + 写入）  ≤ 320 行
 ├── ScanViews.swift        ⑥ 扫码封装 + 下架流程（验证 + 补位） ≤ 380 行
-├── ContainerShelfView.swift  ⑦ 柜体正视图渲染（冰柜 / 货架 + 位置徽章） ≤ 300 行
+├── ContainerFormView.swift   ⑦ 容器新建 / 编辑表单 + 缩容校验          ≤ 250 行
 ├── LoginViews.swift       ⑧ 登录页（手机号 + 密码 + 语言切换 + 角色） ≤ 200 行
 └── SellViews.swift        ⑨ 临期专区（挂牌表单 + 商品卡页） ≤ 300 行
 ```
@@ -41,10 +41,10 @@ LastCall/App/
 | ① `LastCallApp.swift` | `@main`、ModelContainer 配置、Store seed、scheme/全局外观 | 任何业务代码 |
 | ② `Models.swift` | 全部 `@Model`、`enum`、算法（位置/日期/状态）、`AppDate`、`excelColumnName` | 任何 SwiftUI View |
 | ③ `ContentView.swift` | TabView、首页各项卡片、设置页、根导航状态 | 容器内部逻辑 |
-| ④ `ContainerViews.swift` | 容器列表、创建表单、格子网格、格位弹窗 | 条码扫描 UI、上架写入 |
+| ④ `ContainerViews.swift` | 容器列表、格子网格、格位弹窗（点格子 → 上架的唯一入口） | 容器表单（见 ⑦）、条码扫描 UI、上架写入 |
 | ⑤ `AddItemViews.swift` | 上架入口、扫码对接触发、日期与保质期表单、过期预览、写入 `nextSlot` | 下架逻辑 |
 | ⑥ `ScanViews.swift` | VisionKit 封装、扫码 sheet、下架确认 | 数据写入以外的业务逻辑 |
-| ⑦ `ContainerShelfView.swift` | 柜体正视图（冰柜 / 货架外框、层板、格位排布）、位置徽章 `LocationBadge` | 任何数据写入 |
+| ⑦ `ContainerFormView.swift` | 容器新建 / 编辑表单（名称 / 类型 / rows×columns×depth）、缩容冲突提示 | 任何数据写入（改规格只由本表单发起，且必须先过 `resizeConflicts`） |
 | ⑧ `LoginViews.swift` | 登录页、手机号 / 密码校验、语言切换器、角色选择 | 真实账号体系（Deferred） |
 | ⑨ `SellViews.swift` | 临期专区：挂牌表单、商品卡页 | 下单 / 支付 / 客户账号（本轮不做） |
 

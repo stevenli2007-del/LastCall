@@ -56,7 +56,7 @@ struct ContainerListView: View {
                     Button { showingCreate = true } label: { Image(systemName: "plus") }
                 }
             }
-            .sheet(isPresented: $showingCreate) { CreateContainerSheet() }
+            .sheet(isPresented: $showingCreate) { ContainerFormSheet(mode: .create) }
         }
     }
 }
@@ -68,6 +68,7 @@ struct ContainerDetailView: View {
     @Query private var stores: [Store]
     @State private var selectedCell: Int?
     @State private var addItemCell: Int?
+    @State private var showingEdit = false
 
     private let today = Date()
 
@@ -78,13 +79,6 @@ struct ContainerDetailView: View {
     private var focusCell: Int? {
         guard let id = route.focusItemID else { return nil }
         return container?.items.first { $0.id == id }?.cellIndex
-    }
-
-    /// 上架默认落在高亮格；没有高亮时落在第一个还有空位的格子
-    private var defaultAddCell: Int {
-        guard let container else { return 0 }
-        if let focusCell { return focusCell }
-        return (0..<container.cellCount).first { nextDepth(in: container, cell: $0) != nil } ?? 0
     }
 
     /// 从格位弹窗里点「上架到此格」：先收起弹窗，再开上架表单
@@ -126,9 +120,13 @@ struct ContainerDetailView: View {
             }
         }
         .toolbar {
+            /// H7-2：`+` 是「改这个柜子」，不是上架。上架一律从点格子进
             ToolbarItem(placement: .topBarTrailing) {
-                Button { addItemCell = defaultAddCell } label: { Image(systemName: "plus") }
+                Button { showingEdit = true } label: { Image(systemName: "slider.horizontal.3") }
             }
+        }
+        .sheet(isPresented: $showingEdit) {
+            if let container { ContainerFormSheet(mode: .edit(container)) }
         }
         .sheet(isPresented: Binding(get: { addItemCell != nil },
                                     set: { if !$0 { addItemCell = nil } })) {
@@ -310,72 +308,6 @@ struct CellSheet: View {
                 }
             }
         }
-    }
-}
-
-/// 新建容器：名称 / 类型 / rows × cols × depthCapacity，默认 3 × 2 × 5（PRD §5.3）
-struct CreateContainerSheet: View {
-    @Query private var stores: [Store]
-    @Environment(\.modelContext) private var context
-    @Environment(\.dismiss) private var dismiss
-
-    @State private var name = ""
-    @State private var type: ContainerType = .fridge
-    @State private var rows = 3
-    @State private var columns = 2
-    @State private var depth = 5
-
-    private var trimmedName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section("基本信息") {
-                    TextField("容器名称", text: $name)
-                    Picker("类型", selection: $type) {
-                        ForEach(ContainerType.allCases) { t in
-                            Text(t.displayName).tag(t)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                }
-
-                Section("正视图与纵深") {
-                    Stepper("行数 \(rows)", value: $rows, in: 1...8)
-                    Stepper("列数 \(columns)", value: $columns, in: 1...8)
-                    Stepper("每格纵深 \(depth) 件", value: $depth, in: 1...10)
-                    Text("正视图 \(rows) × \(columns) = \(rows * columns) 格（\(excelColumnName(0))–\(excelColumnName(rows * columns - 1))），总容量 \(rows * columns * depth) 件")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .navigationTitle("新建容器")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("取消") { dismiss() }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("保存") { save() }
-                        .disabled(trimmedName.isEmpty)
-                }
-            }
-        }
-    }
-
-    private func save() {
-        let container = Container(name: trimmedName,
-                                  type: type,
-                                  rows: rows,
-                                  columns: columns,
-                                  depthCapacity: depth)
-        context.insert(container)
-        if let store = stores.first {
-            container.store = store
-            store.containers.append(container)
-        }
-        try? context.save()
-        dismiss()
     }
 }
 

@@ -271,6 +271,40 @@ func nextSlot(in container: Container, preferredCell: Int) -> (cell: Int, depth:
     return nil
 }
 
+// MARK: - 改规格校验（H7-2）
+
+/// 改小规格会让已有商品「悬空」的一种冲突
+enum ResizeConflict: Identifiable {
+    case cellRemoved(label: String, count: Int)                   // 新规格没有这一格
+    case depthOverflow(label: String, count: Int, newDepth: Int)  // 格子还在，但装不下
+
+    var id: String { message }
+    var message: String {
+        switch self {
+        case .cellRemoved(let l, let n):
+            return "\(l) 格还有 \(n) 件，新规格没有这一格"
+        case .depthOverflow(let l, let n, let d):
+            return "\(l) 格有 \(n) 件，超过新的纵深 \(d)（超出 \(n - d) 件）"
+        }
+    }
+}
+
+/// 改规格前先问一次：返回空 = 可以安全保存。缩小会打破不变量 I1 / I2，
+/// 一律**拒绝保存**、不做自动搬家 —— 商品位置是物理事实（H7 §2.3，Steven 2026-10-24 拍板）
+func resizeConflicts(in container: Container,
+                     rows: Int, columns: Int, depthCapacity: Int) -> [ResizeConflict] {
+    let cells = max(1, rows) * max(1, columns)
+    let depth = max(1, depthCapacity)
+    var out: [ResizeConflict] = []
+    for cell in 0..<container.cellCount {
+        let n = container.items.filter { $0.cellIndex == cell }.count
+        guard n > 0 else { continue }
+        if cell >= cells { out.append(.cellRemoved(label: excelColumnName(cell), count: n)) }
+        else if n > depth { out.append(.depthOverflow(label: excelColumnName(cell), count: n, newDepth: depth)) }
+    }
+    return out
+}
+
 /// 上架：算下一个空位 → 写入 → save。位置由 nextSlot 决定（不变量 I1 / I3 / I4）
 /// 容器全满时抛错，不写入任何数据
 @discardableResult
