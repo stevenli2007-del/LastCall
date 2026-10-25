@@ -172,6 +172,44 @@ struct ContainerDetailView: View {
 
 // MARK: - Subviews
 
+/// 位置码徽章 —— H7 §1.3「位置码即视觉锚点」：
+/// 同一个「黄底 B2」在首页提醒 / 格子内 / 下架列表三处长得完全一样，店长认一次就到处认得。
+/// 配色沿用 DATABASE §4.3 状态表（黄底 = 临期，红底 = 过期），**比商品名更靠前、字号更大**
+struct LocationBadge: View {
+    enum Scale { case regular, large }
+
+    let code: String
+    let itemStatus: ItemStatus
+    var scale: Scale = .regular
+
+    private var large: Bool { scale == .large }
+
+    var body: some View {
+        Text(code)
+            .font(.system(size: large ? 15 : 11, weight: .bold).monospacedDigit())
+            .foregroundStyle(foreground)
+            .padding(.horizontal, large ? 9 : 6)
+            .padding(.vertical, large ? 5 : 3)
+            .background(background, in: .capsule)
+    }
+
+    private var background: Color {
+        switch itemStatus {
+        case .normal: return .statusNormalBG
+        case .near: return .statusNearBG
+        case .expired: return .statusExpiredBG
+        }
+    }
+
+    private var foreground: Color {
+        switch itemStatus {
+        case .normal: return .statusNormalFG
+        case .near: return .statusNearFG
+        case .expired: return .statusExpiredFG
+        }
+    }
+}
+
 /// 单个格子：标签 + 纵深小色块（沿用原型 `.cell` / `.unit` 视觉）
 struct CellBox: View {
     let container: Container
@@ -208,22 +246,22 @@ struct CellBox: View {
         .background(Color(hex: 0xFBFCFA), in: .rect(cornerRadius: 13))
         .overlay {
             RoundedRectangle(cornerRadius: 13)
-                .stroke(focused ? Color.brandGreen : Color(hex: 0xE3E9E3), lineWidth: focused ? 2 : 1)
+                .stroke(strokeColor, lineWidth: strokeWidth)
         }
         .shadow(color: focused ? Color.brandGreen.opacity(0.25) : .clear, radius: 6, y: 2)
     }
 
     /// 已占用的显示位置码色块，未占用的显示虚线空位（PRD §5.3「未使用的容量保持空位显示」）
+    ///
+    /// 纵深表达（H7 §1.3）：越靠后越淡、越往右缩进一点 —— 一眼看出这一格的前后顺序
     private var unitList: some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 30), spacing: 5)], spacing: 5) {
             ForEach(cellItems) { item in
-                let colors = unitColors(item)
-                Text(item.locationCode)
-                    .font(.system(size: 9, weight: .semibold))
-                    .foregroundStyle(colors.foreground)
-                    .frame(minWidth: 30)
-                    .padding(.vertical, 5)
-                    .background(colors.background, in: .rect(cornerRadius: 7))
+                LocationBadge(code: item.locationCode,
+                              itemStatus: unitColors(item).status)
+                    .frame(minWidth: 34)
+                    .opacity(1 - Double(min(3, item.depthIndex)) * 0.15)
+                    .offset(x: CGFloat(min(3, item.depthIndex)) * 2)
             }
             ForEach(0..<emptySlots, id: \.self) { _ in
                 RoundedRectangle(cornerRadius: 7)
@@ -234,12 +272,32 @@ struct CellBox: View {
         }
     }
 
-    /// 配色沿用 DATABASE §4.3 的状态表（CR-5.3）
-    private func unitColors(_ item: Item) -> (background: Color, foreground: Color) {
+    /// 格内有临期 / 过期货时整格描边 —— 扫一眼柜子就知道哪一格要清
+    private var attention: ItemStatus? {
+        if cellItems.contains(where: { unitColors($0).status == .expired }) { return .expired }
+        if cellItems.contains(where: { unitColors($0).status == .near }) { return .near }
+        return nil
+    }
+
+    private var strokeColor: Color {
+        if focused { return Color.brandGreen }
+        switch attention {
+        case .expired: return .statusExpiredBG
+        case .near: return .statusNearBG
+        default: return Color(hex: 0xE3E9E3)
+        }
+    }
+
+    private var strokeWidth: CGFloat {
+        focused ? 2 : (attention == nil ? 1 : 2)
+    }
+
+    /// 状态 + 配色沿用 DATABASE §4.3 的状态表（CR-5.3）
+    private func unitColors(_ item: Item) -> (status: ItemStatus, background: Color, foreground: Color) {
         switch status(of: item, today: today, nearDays: nearDays) {
-        case .normal: return (.statusNormalBG, .statusNormalFG)
-        case .near: return (.statusNearBG, .statusNearFG)
-        case .expired: return (.statusExpiredBG, .statusExpiredFG)
+        case .normal: return (.normal, .statusNormalBG, .statusNormalFG)
+        case .near: return (.near, .statusNearBG, .statusNearFG)
+        case .expired: return (.expired, .statusExpiredBG, .statusExpiredFG)
         }
     }
 }
@@ -267,10 +325,10 @@ struct CellSheet: View {
                 } else {
                     List(cellItems) { item in
                         HStack(spacing: 12) {
-                            Text(item.locationCode)
-                                .font(.system(size: 13, weight: .bold).monospacedDigit())
-                                .foregroundStyle(Color.brandGreen)
-                                .frame(width: 34, alignment: .leading)
+                            LocationBadge(code: item.locationCode,
+                                          itemStatus: status(of: item, today: today, nearDays: nearDays),
+                                          scale: .large)
+                                .frame(width: 46, alignment: .leading)
                             VStack(alignment: .leading, spacing: 3) {
                                 HStack(spacing: 6) {
                                     Text(item.displayName).font(.subheadline.weight(.semibold))

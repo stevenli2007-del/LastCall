@@ -192,9 +192,9 @@ struct AlertRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: item.container?.type.symbolName ?? "shippingbox")
-                .foregroundStyle(Color.brandGreen)
-                .frame(width: 28)
+            /// 位置码徽章放行首：H7 §1.3 —— 一眼看到「黄底 B2」就知道去哪一格清货
+            LocationBadge(code: item.locationCode, itemStatus: itemStatus, scale: .large)
+                .frame(minWidth: 52, alignment: .leading)
 
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
@@ -204,7 +204,7 @@ struct AlertRow: View {
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(.secondary)
                 }
-                Text("\(containerName) \(item.locationCode) · 过期 \(item.expiryDate.formatted(date: .numeric, time: .omitted))")
+                Text("\(containerName) · 过期 \(item.expiryDate.formatted(date: .numeric, time: .omitted))")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
