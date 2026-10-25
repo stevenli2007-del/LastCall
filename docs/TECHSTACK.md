@@ -162,6 +162,20 @@
 
 ---
 
+### ADR-009：中英文切换 —— 方案 B（App 内切换，不跟随系统语言）
+
+**决策：** 轻量 `tr("中文", "English")` 全局助手 + 语言选择存 `@AppStorage("appLanguage")`；登录页放中/英分段切换器；`RootView` 用 `.id(lang)` 强制整棵视图树重建，切完立即全量重绘。**不引入 String Catalog / Localizable.strings**。
+
+**背景：** H7 优化清单第 7 项（`docs/H7-OPTIMIZATION.md` §7）。方案 A（跟随系统语言）在演示机是中文系统时评委根本看不到英文，等于白做；方案 B 现场当场切给评委看，符合「可以选择语言」的原始需求。
+
+**为什么不走 Apple 本地化管线：** 约 45 个固定串、两种语言、演示项目。为这点量动 String Catalog + `Locale` 覆盖是把简单问题复杂化；`tr` 双参内联写法自带「改动即见双语」，原位替换不增行数（ContentView/Models/ContainerViews 当时全线贴 400 行硬上限）。
+
+**范围（H7-OPT §7.3）：** 登录页全量、Tab 栏、首页四卡+提醒列表、容器列表/详情/格位面板、上架表单、设置页；扫码提示 / 错误 toast / 空态文案**保留中文**（低频，现场切英文翻不到）。`ContainerFormView`（新建/编辑容器表单）与 `SellViews` 内容、下架列表内容本轮未双语，留待需要时按同模式补。
+
+**代价：** 零新文件（`L10n` + `tr` 住在 `LoginViews.swift`，该文件 180→207 行）；`ContentView.swift` 因双行 `tr()` 调用净增 4 行，已用 `PreviewSample` for 循环单行化腾回，仍 400/400。
+
+---
+
 ## 4. 项目结构
 
 ```

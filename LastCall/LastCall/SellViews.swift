@@ -15,7 +15,7 @@ import SwiftData
 struct SellTab: View {
     var body: some View {
         NavigationStack { SellListView() }
-            .tabItem { Label("临期专区", systemImage: "tag.fill") }
+            .tabItem { Label(tr("临期专区", "Deals"), systemImage: "tag.fill") }
     }
 }
 

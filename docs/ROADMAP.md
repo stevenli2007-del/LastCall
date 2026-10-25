@@ -181,7 +181,7 @@ iPhone：**设置 → 隐私与安全性 → 开发者模式** → 打开 → �
 | 4 | App Icon | 0.25h | ⬜ |
 | 5 | 门店名称可修改 | 0.25h | ⬜ |
 | 6 | 临期专区（降级版贩卖窗口） | 1h | ⬜ |
-| 7 | 中英文切换（方案 B，高频页） | 1.5h | ⬜ |
+| 7 | 中英文切换（方案 B，高频页） | 1.5h | ✅ 完成（18:35 装机） |
 
 ⚠️ 本轮会突破「6 个 Swift 文件」上限，新增 `ContainerShelfView.swift` / `LoginViews.swift` / `SellViews.swift`（单文件 400 行硬上限不变），**动工前走 ADR 登记并请 Steven 批准**。
 
@@ -263,4 +263,5 @@ iPhone：**设置 → 隐私与安全性 → 开发者模式** → 打开 → �
 | H7-5 门店名可改 | 0.25h | ~0.1h | 2026-10-24 17:42 | ✅ 完成，已装机。设置页「名称」只读行 → `TextField` 直绑 `Store.name`（与 H5 阈值同款 Binding 模式，改动即时落库）。为腾行数把 `nearDaysBinding` 从 10 行压到 5 行，`ContentView.swift` 399 行。SwiftData 自检：逐字改名后另开 context 读回一致，容器关系与阈值不受影响 |
 | H7-6 临期专区 | 1h | ~0.6h | 2026-10-24 17:52 | ✅ 完成，已装机。新文件 `SellViews.swift`（292 行，⑨ 槽位）：第 5 个 tab「临期专区」= 在售挂牌卡（美团式：折后价红大字 + 划线原价 + 折扣标 + LocationBadge 取货位 + 剩余天数 + 门店名 + ShareLink 文案分享）+ 可挂牌列表（临期/过期，最快过期在前）+ 挂牌表单（Stepper 定价、售价>原价拦截）。**模型决策**：不建 `Listing` 模型，Item 加 3 字段（isListed/originalPrice/salePrice，带默认值走 additive 轻量迁移）—— 真机覆盖安装后进程存活验证迁移无恙。数据层自检 8 项全过；卡片视觉经模拟器截图确认后删除调试代码 |
 | H7-7 配货单识别（新增项） | 2h | — | 2026-10-24 18:05 | ⏸ **已停放**，代码未写。 Steven 提出：拍照/上传配货单 → 识别条码+品名+配货价 → 上架时 autofill 名称、挂牌时给定价参考。技术路线已拍板：端侧 Vision OCR（离线，不接 LLM）+ 目录存 `Documents/catalog.json`（不建 SwiftData 模型）+ 入口首页第 5 张卡。完整设计与验收方案见 `docs/H7-OPTIMIZATION.md` §8，ADR 见 `docs/TECHSTACK.md` **ADR-008**。实现时文件数 9→10，需再走一次批准 |
-| H7 Buffer（余项） | — | | | 第 7 项中英文切换（当前在做）+ 停放的第 8 项，见 `docs/H7-OPTIMIZATION.md` |
+| H7-7 中英文切换（方案 B） | 1.5h | ~0.15h | 2026-10-24 18:35 | ✅ 代码完成，已装机待验收。零新文件：`L10n` + `tr("中文","English")` 助手住进 `LoginViews.swift`（180→207 行），语言存 `@AppStorage("appLanguage")`，登录页右上角中/英分段切换，`RootView` 用 `.id(lang)` 整树重建即时重绘。覆盖：登录页全量、Tab 栏、首页四卡+提醒、容器列表/详情/格位面板、上架表单、设置页（ADR-009）；扫码提示/错误/空态按 §7.3 保留中文。模拟器截图验证 EN 登录页 + EN 首页 + 删 key 回中文默认均正确；真机 BUILD SUCCEEDED 已装机。`ContentView` 净增 4 行已用 `PreviewSample` 循环单行化腾回（仍 400/400） |
+| H7 Buffer（余项） | — | | | 第 8 项配货单识别已停放（设计固化在 `docs/H7-OPTIMIZATION.md` §8，需第 10 文件槽位） |

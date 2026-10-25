@@ -20,8 +20,8 @@ enum ContainerType: String, Codable, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .fridge: return "冰柜"
-        case .shelf: return "货架"
+        case .fridge: return tr("冰柜", "Fridge")
+        case .shelf: return tr("货架", "Shelf")
         }
     }
 
@@ -184,9 +184,9 @@ enum ItemStatus: String, Codable, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .normal: return "正常"
-        case .near: return "临期"
-        case .expired: return "过期"
+        case .normal: return tr("正常", "OK")
+        case .near: return tr("临期", "Near")
+        case .expired: return tr("过期", "Expired")
         }
     }
 }

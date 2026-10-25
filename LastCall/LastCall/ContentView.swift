@@ -16,20 +16,20 @@ struct ContentView: View {
         TabView {
             HomeView()
                 .tabItem {
-                    Label("首页", systemImage: "house.fill")
+                    Label(tr("首页", "Home"), systemImage: "house.fill")
                 }
             ContainerListView()
                 .tabItem {
-                    Label("容器", systemImage: "square.grid.2x2.fill")
+                    Label(tr("容器", "Containers"), systemImage: "square.grid.2x2.fill")
                 }
             RemoveListView()
                 .tabItem {
-                    Label("下架", systemImage: "minus.circle.fill")
+                    Label(tr("下架", "Remove"), systemImage: "minus.circle.fill")
                 }
             SellTab()    // 临期专区的 tabItem 定义在 SellViews 里
             SettingsView()
                 .tabItem {
-                    Label("设置", systemImage: "gearshape.fill")
+                    Label(tr("设置", "Settings"), systemImage: "gearshape.fill")
                 }
         }
     }
@@ -75,13 +75,13 @@ struct HomeView: View {
                 .padding(16)
             }
             .background(Color.paper.ignoresSafeArea())
-            .navigationTitle("临期宝")
+            .navigationTitle(tr("临期宝", "LastCall"))
             .navigationDestination(for: ContainerRoute.self) { route in
                 ContainerDetailView(route: route)
             }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Text(store?.name ?? "未初始化门店")
+                    Text(store?.name ?? tr("未初始化门店", "No store"))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -91,16 +91,16 @@ struct HomeView: View {
 
     private var overviewGrid: some View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-            StatCard(title: "在库商品", value: inStockCount, symbol: "shippingbox.fill", tint: .brandGreen)
-            StatCard(title: "临期", value: nearCount, symbol: "clock.badge.exclamationmark.fill", tint: .statusNearFG)
-            StatCard(title: "已过期", value: expiredCount, symbol: "exclamationmark.triangle.fill", tint: .statusExpiredFG)
-            StatCard(title: "容器", value: containerCount, symbol: "square.grid.2x2.fill", tint: .brandGreen)
+            StatCard(title: tr("在库商品", "In Stock"), value: inStockCount, symbol: "shippingbox.fill", tint: .brandGreen)
+            StatCard(title: tr("临期", "Near Expiry"), value: nearCount, symbol: "clock.badge.exclamationmark.fill", tint: .statusNearFG)
+            StatCard(title: tr("已过期", "Expired"), value: expiredCount, symbol: "exclamationmark.triangle.fill", tint: .statusExpiredFG)
+            StatCard(title: tr("容器", "Containers"), value: containerCount, symbol: "square.grid.2x2.fill", tint: .brandGreen)
         }
     }
 
     private var alertSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("今日提醒")
+            Text(tr("今日提醒", "Today's Alerts"))
                 .font(.headline)
 
             if alertItems.isEmpty {
@@ -143,7 +143,8 @@ struct ContainerTile: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(container.name)
                     .font(.subheadline.weight(.semibold))
-                Text("\(container.usedCount) 件商品 · 正视图 \(container.rows) × \(container.columns)")
+                Text(tr("\(container.usedCount) 件商品 · 正视图 \(container.rows) × \(container.columns)",
+                        "\(container.usedCount) items · \(container.rows) × \(container.columns) grid"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 FillBar(ratio: container.fillRatio)
@@ -189,7 +190,7 @@ struct AlertRow: View {
 
     private var itemStatus: ItemStatus { status(of: item, today: today, nearDays: nearDays) }
 
-    private var containerName: String { item.container?.name ?? "未知容器" }
+    private var containerName: String { item.container?.name ?? tr("未知容器", "Unknown") }
 
     var body: some View {
         HStack(spacing: 12) {
@@ -205,7 +206,8 @@ struct AlertRow: View {
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(.secondary)
                 }
-                Text("\(containerName) · 过期 \(item.expiryDate.formatted(date: .numeric, time: .omitted))")
+                Text(tr("\(containerName) · 过期 \(item.expiryDate.formatted(date: .numeric, time: .omitted))",
+                        "\(containerName) · Exp \(item.expiryDate.formatted(date: .numeric, time: .omitted))"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -275,40 +277,42 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("门店") {
-                    TextField("门店名称", text: storeNameBinding)
-                    LabeledContent("时区", value: store?.timezoneIdentifier ?? "—")
+                Section(tr("门店", "Store")) {
+                    TextField(tr("门店名称", "Store name"), text: storeNameBinding)
+                    LabeledContent(tr("时区", "Timezone"), value: store?.timezoneIdentifier ?? "—")
                 }
 
-                Section("临期阈值") {
-                    Picker("提前预警", selection: nearDaysBinding) {
+                Section(tr("临期阈值", "Near-Expiry Threshold")) {
+                    Picker(tr("提前预警", "Warn ahead"), selection: nearDaysBinding) {
                         ForEach([1, 2, 3, 5, 7], id: \.self) { days in
-                            Text("\(days) 天").tag(days)
+                            Text(tr("\(days) 天", "\(days)d")).tag(days)
                         }
                     }
                     .pickerStyle(.segmented)
-                    Text("过期前 N 天起标记为临期。改完立即生效，切回首页就能看到临期数量的变化。")
+                    Text(tr("过期前 N 天起标记为临期。改完立即生效，切回首页就能看到临期数量的变化。",
+                            "Items within N days of expiry are marked as near-expiry. Applies immediately — check Home."))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
 
-                Section("账号") {
+                Section(tr("账号", "Account")) {
                     SignOutButton()
                 }
 
-                Section("演示数据") {
-                    Text("重置会清空所有容器、商品与下架记录，然后重新载入三个演示容器。手机上随时可用，不需要连 Xcode。")
+                Section(tr("演示数据", "Demo Data")) {
+                    Text(tr("重置会清空所有容器、商品与下架记录，然后重新载入三个演示容器。手机上随时可用，不需要连 Xcode。",
+                            "Reset clears all containers, items and removal records, then reloads the three demo containers. Works on-device, no Xcode needed."))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
-                    Button("重置演示数据", role: .destructive) { confirmingReset = true }
+                    Button(tr("重置演示数据", "Reset Demo Data"), role: .destructive) { confirmingReset = true }
                 }
             }
-            .navigationTitle("设置")
-            .confirmationDialog("重置演示数据？", isPresented: $confirmingReset, titleVisibility: .visible) {
-                Button("重置", role: .destructive) { resetDemoData() }
-                Button("取消", role: .cancel) { }
+            .navigationTitle(tr("设置", "Settings"))
+            .confirmationDialog(tr("重置演示数据？", "Reset demo data?"), isPresented: $confirmingReset, titleVisibility: .visible) {
+                Button(tr("重置", "Reset"), role: .destructive) { resetDemoData() }
+                Button(tr("取消", "Cancel"), role: .cancel) { }
             } message: {
-                Text("当前所有数据将被清空，无法恢复。")
+                Text(tr("当前所有数据将被清空，无法恢复。", "All current data will be erased and cannot be recovered."))
             }
         }
     }
@@ -383,11 +387,7 @@ enum PreviewSample {
         let context = ModelContext(container)
         let store = SeedData.makeDefaultStore()
         context.insert(store)
-        for c in SeedData.makeDemoContainers() {
-            c.store = store
-            store.containers.append(c)
-            context.insert(c)
-        }
+        for c in SeedData.makeDemoContainers() { c.store = store; store.containers.append(c); context.insert(c) }
         return container
     }
 }

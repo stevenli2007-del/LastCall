@@ -47,7 +47,7 @@ struct ContainerListView: View {
                 }
             }
             .background(Color.paper.ignoresSafeArea())
-            .navigationTitle("容器")
+            .navigationTitle(tr("容器", "Containers"))
             .navigationDestination(for: ContainerRoute.self) { route in
                 ContainerDetailView(route: route)
             }
@@ -108,7 +108,7 @@ struct ContainerDetailView: View {
             }
         }
         .background(Color.paper.ignoresSafeArea())
-        .navigationTitle(container?.name ?? "容器")
+        .navigationTitle(container?.name ?? tr("容器", "Container"))
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: Binding(get: { selectedCell != nil },
                                     set: { if !$0 { selectedCell = nil } })) {
@@ -140,12 +140,14 @@ struct ContainerDetailView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 Image(systemName: c.type.symbolName).foregroundStyle(Color.brandGreen)
-                Text("\(c.type.displayName) · 正视图 \(c.rows) × \(c.columns) · 每格纵深 \(c.depthCapacity)")
+                Text(tr("\(c.type.displayName) · 正视图 \(c.rows) × \(c.columns) · 每格纵深 \(c.depthCapacity)",
+                        "\(c.type.displayName) · \(c.rows) × \(c.columns) grid · depth \(c.depthCapacity)"))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
             FillBar(ratio: c.fillRatio)
-            Text("已用 \(c.usedCount) / 容量 \(c.totalCapacity) 件 · 共 \(c.cellCount) 格")
+            Text(tr("已用 \(c.usedCount) / 容量 \(c.totalCapacity) 件 · 共 \(c.cellCount) 格",
+                    "Used \(c.usedCount) / \(c.totalCapacity) · \(c.cellCount) cells"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -234,7 +236,7 @@ struct CellBox: View {
             }
 
             if cellItems.isEmpty {
-                Text("空格位").font(.system(size: 10)).foregroundStyle(Color(hex: 0xA1AAA4))
+                Text(tr("空格位", "Empty")).font(.system(size: 10)).foregroundStyle(Color(hex: 0xA1AAA4))
             } else {
                 unitList
             }
@@ -336,7 +338,8 @@ struct CellSheet: View {
                                         .font(.caption.monospacedDigit())
                                         .foregroundStyle(.secondary)
                                 }
-                                Text("过期 \(item.expiryDate.formatted(date: .numeric, time: .omitted))")
+                                Text(tr("过期 \(item.expiryDate.formatted(date: .numeric, time: .omitted))",
+                                        "Exp \(item.expiryDate.formatted(date: .numeric, time: .omitted))"))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -347,11 +350,11 @@ struct CellSheet: View {
                     }
                 }
             }
-            .navigationTitle("格子 \(excelColumnName(cellIndex))")
+            .navigationTitle(tr("格子 \(excelColumnName(cellIndex))", "Cell \(excelColumnName(cellIndex))"))
             .navigationBarTitleDisplayMode(.inline)
             .safeAreaInset(edge: .bottom) {
                 Button { onAddItem(cellIndex) } label: {
-                    Label("上架到 \(excelColumnName(cellIndex)) 格", systemImage: "plus")
+                    Label(tr("上架到 \(excelColumnName(cellIndex)) 格", "Add to \(excelColumnName(cellIndex))"), systemImage: "plus")
                         .font(.subheadline.weight(.semibold))
                         .frame(maxWidth: .infinity)
                 }
@@ -362,7 +365,7 @@ struct CellSheet: View {
             }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("完成") { dismiss() }
+                    Button(tr("完成", "Done")) { dismiss() }
                 }
             }
         }

@@ -16,18 +16,34 @@ enum Session {
     static let key = "hasLoggedIn"
 }
 
+// MARK: - 中英文切换（H7-7 方案 B：App 内切换，不跟随系统语言）
+
+/// 语言选择的唯一存储 key。`zh` = 中文，`en` = English
+enum L10n {
+    static let langKey = "appLanguage"
+    static var isEN: Bool { UserDefaults.standard.string(forKey: langKey) == "en" }
+}
+
+/// 轻量双语文案助手：tr("中文", "English")。只覆盖高频页固定文案；
+/// 扫码提示 / 错误 toast / 空态按 H7-OPT §7.3 保留中文，不走这里
+func tr(_ zh: String, _ en: String) -> String { L10n.isEN ? en : zh }
+
 // MARK: - RootView
 
 /// 登录闸门：没登录只看到登录页，登录后才是 TabView
 struct RootView: View {
     @AppStorage(Session.key) private var hasLoggedIn = false
+    @AppStorage(L10n.langKey) private var lang = "zh"
 
     var body: some View {
-        if hasLoggedIn {
-            ContentView()
-        } else {
-            LoginView()
+        Group {
+            if hasLoggedIn {
+                ContentView()
+            } else {
+                LoginView()
+            }
         }
+        .id(lang)   // 切语言 → 整棵树重建，所有 tr() 立即重算（H7-OPT §7.2：改完立即重绘）
     }
 }
 
@@ -35,6 +51,7 @@ struct RootView: View {
 
 struct LoginView: View {
     @AppStorage(Session.key) private var hasLoggedIn = false
+    @AppStorage(L10n.langKey) private var lang = "zh"
 
     @State private var phone = ""
     @State private var password = ""
@@ -51,6 +68,15 @@ struct LoginView: View {
 
     var body: some View {
         VStack(spacing: 24) {
+            HStack {
+                Spacer(minLength: 0)
+                Picker("Language", selection: $lang) {
+                    Text("中文").tag("zh")
+                    Text("EN").tag("en")
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 150)
+            }
             Spacer(minLength: 0)
             header
             credentialsCard
@@ -70,9 +96,9 @@ struct LoginView: View {
             Image(systemName: "clock.badge.checkmark")
                 .font(.system(size: 46))
                 .foregroundStyle(Color.brandGreen)
-            Text("临期宝")
+            Text(tr("临期宝", "LastCall"))
                 .font(.title.weight(.bold))
-            Text("便利店临期商品管理")
+            Text(tr("便利店临期商品管理", "Near-Expiry Stock Manager"))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
@@ -84,7 +110,7 @@ struct LoginView: View {
                 Text("+86")
                     .font(.body.weight(.medium))
                     .foregroundStyle(.secondary)
-                TextField("手机号", text: $phone)
+                TextField(tr("手机号", "Phone"), text: $phone)
                     .keyboardType(.numberPad)
                     .textInputAutocapitalization(.never)
                     .font(.body.monospacedDigit())
@@ -93,7 +119,7 @@ struct LoginView: View {
             .padding(14)
             .background(.background, in: .rect(cornerRadius: 12))
 
-            SecureField("密码（至少 6 位）", text: $password)
+            SecureField(tr("密码（至少 6 位）", "Password (6+ chars)"), text: $password)
                 .padding(14)
                 .background(.background, in: .rect(cornerRadius: 12))
         }
@@ -111,7 +137,7 @@ struct LoginView: View {
 
     private var signInButton: some View {
         Button { signIn() } label: {
-            Text("登录")
+            Text(tr("登录", "Sign In"))
                 .font(.headline)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
@@ -122,7 +148,8 @@ struct LoginView: View {
     }
 
     private var footer: some View {
-        Text("演示版本：任意符合格式的手机号 + 6 位以上密码即可进入，账号体系尚未接入。")
+        Text(tr("演示版本：任意符合格式的手机号 + 6 位以上密码即可进入，账号体系尚未接入。",
+                "Demo build: any valid phone number + 6-char password works. Accounts are not wired up yet."))
             .font(.caption)
             .foregroundStyle(.secondary)
             .multilineTextAlignment(.center)
@@ -139,11 +166,11 @@ struct LoginView: View {
     /// 不弹系统弹窗，红字就地提示（H7 §3）
     private func signIn() {
         guard phoneOK else {
-            errorMessage = "请输入 11 位手机号（1 开头）"
+            errorMessage = tr("请输入 11 位手机号（1 开头）", "Enter an 11-digit phone number starting with 1")
             return
         }
         guard passwordOK else {
-            errorMessage = "密码至少 6 位"
+            errorMessage = tr("密码至少 6 位", "Password must be at least 6 characters")
             return
         }
         errorMessage = nil
@@ -159,12 +186,12 @@ struct SignOutButton: View {
     @State private var confirming = false
 
     var body: some View {
-        Button("退出登录", role: .destructive) { confirming = true }
-            .confirmationDialog("退出登录？", isPresented: $confirming, titleVisibility: .visible) {
-                Button("退出", role: .destructive) { hasLoggedIn = false }
-                Button("取消", role: .cancel) { }
+        Button(tr("退出登录", "Sign Out"), role: .destructive) { confirming = true }
+            .confirmationDialog(tr("退出登录？", "Sign out?"), isPresented: $confirming, titleVisibility: .visible) {
+                Button(tr("退出", "Sign Out"), role: .destructive) { hasLoggedIn = false }
+                Button(tr("取消", "Cancel"), role: .cancel) { }
             } message: {
-                Text("回到登录页，库存数据不会丢失。")
+                Text(tr("回到登录页，库存数据不会丢失。", "Returns to the sign-in page. Inventory data is kept."))
             }
     }
 }
